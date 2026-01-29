@@ -25,6 +25,11 @@
  * between C++ (Jetson) and C (Embedded Firmware).
  */
 
+#ifndef VESPA_CAN_PROTOCOL_H
+#define VESPA_CAN_PROTOCOL_H
+
+#include <stdint.h>
+
  /* =========================================================================
  * CAN BUS ID DEFINITIONS (11-bit Standard ID)
  * Priority: Lower Value = Higher Priority

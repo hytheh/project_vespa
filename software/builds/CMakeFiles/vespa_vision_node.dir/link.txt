@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/vespa_vision_node.dir/src/main.cpp.o CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.o -o vespa_vision_node  -Wl,-rpath,/usr/local/cuda-12.6/lib64 -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 -lgstapp-1.0 -lgstbase-1.0 -lgstreamer-1.0 -lgobject-2.0 -lglib-2.0 /usr/local/cuda-12.6/lib64/libcudart.so -lpthread -lgstapp-1.0 -lgstbase-1.0 -lpthread 

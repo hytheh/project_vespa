@@ -2,12 +2,13 @@
  * @file test_protocol.cpp
  * @brief Validation script for CAN Protocol Alignment
  * compile with: g++ test_protocol.cpp -o test_protocol
+ * @note This file is compiled via CMake, which handles the include paths.
  */
 
 #include <iostream>
 #include <cstring>
 #include <iomanip>
-#include "../software/common/inc/can_protocol.h"
+#include "can_protocol.h"
 
 void print_result(const char* test_name, bool passed) {
     std::cout << std::left << std::setw(40) << test_name 
@@ -25,6 +26,21 @@ int main() {
     // 2. Check Coordinate Packing logic
     float input_z = 1200.5f; // 1200.5 mm
     int16_t packed_z = MM_TO_INT16(input_z);
+
+    // Check Negative Coordinates handling
+    float neg_input = -500.5f;
+    int16_t neg_packed = MM_TO_INT16(neg_input);
+    print_result("Negative Logic (-500.5mm -> -5005)", neg_packed == -5005);
+
+    // Check Max Range (3.2m -> 32000 fits in int16_t max 32767)
+    float max_input = 3200.0f;
+    int16_t max_packed = MM_TO_INT16(max_input);
+    print_result("Max Range Logic (3200.0mm -> 32000)", max_packed == 32000);
+
+    // Check Precision Loss
+    float precise_input = 100.55f; // Should truncate/round to 100.5 -> 1005
+    int16_t precise_packed = MM_TO_INT16(precise_input);
+    print_result("Precision Truncation (100.55 -> 1005)", precise_packed == 1005);
     
     // Check if scaling works (1200.5 * 10 = 12005)
     print_result("Scaling Logic (1200.5mm -> 12005)", packed_z == 12005);

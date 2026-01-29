@@ -1,13 +1,41 @@
 /**
  * @file vespa_pipeline.hpp
- * @brief Header for the GStreamer/DeepStream Pipeline Manager.
+ * @brief Manages the GStreamer/DeepStream lifecycle and connects elements.
  *
  * @section DESCRIPTION
- * Defines the `VespaPipeline` class which encapsulates the DeepStream graph.
- * Manages the lifecycle of the GST Elements: Sources, Muxer, Inference, Tracker.
+ * This class encapsulates the GStreamer pipeline logic. It is responsible for
+ * initializing the graph, linking elements (Source -> Mux -> Infer -> Tracker),
+ * and managing the main loop.
  *
- * @section ARCHITECTURE
- * - Source: 2x v4l2src (OV9281 Mono Global Shutter).
- * - Inference: nvinfer (YOLOv5/v8 - VespAI).
- * - Optimization: "Cyclops" logic (Inference on Left Stream only).
+ * @section DEPENDENCIES
+ * - GStreamer 1.0
+ * - DeepStream SDK (nvstreammux, nvinfer, nvtracker)
+ * - VespaWorker (for asynchronous processing)
  */
+
+#ifndef VESPA_PIPELINE_HPP
+#define VESPA_PIPELINE_HPP
+
+#include <gst/gst.h>
+#include "vespa_worker.hpp"
+
+class VespaPipeline {
+public:
+    VespaPipeline();
+    ~VespaPipeline();
+
+    /**
+     * @brief Initializes the pipeline, creates elements, and links them.
+     */
+    void init(int argc, char** argv, VespaWorker* worker);
+
+    void start();
+    void run();
+
+private:
+    GstElement* pipeline_;
+    GMainLoop* loop_;
+    VespaWorker* worker_ref_;
+};
+
+#endif // VESPA_PIPELINE_HPP

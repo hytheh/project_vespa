@@ -27,24 +27,35 @@ pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
 find_package(CUDAToolkit REQUIRED)
 
 # --- Include Directories ---
+set(VESPA_COMMON_INC "${CMAKE_SOURCE_DIR}/../common/inc")
+
 include_directories(
     include
     ${GST_INCLUDE_DIRS}
     ${GST_APP_INCLUDE_DIRS}
     ${CUDAToolkit_INCLUDE_DIRS}
+    ${VESPA_COMMON_INC}
 )
 
-# --- Source Files (We will add more as we build) ---
-set(SOURCES
-    tests/cam_verification.cpp
-)
+# --- Source Files (More will be added as we build) ---
+set(VISION_SRC
+    src/main.cpp
+    src/comms/vespa_can.cpp
+    src/vespa_worker.cpp
+    )
 
-# --- Executable: Camera Test ---
-add_executable(vespa_cam_test ${SOURCES})
-
-# Link Libraries
-target_link_libraries(vespa_cam_test
+# --- Executable: Vision node ---
+add_executable(vespa_vision_node ${VISION_SRC})
+target_link_libraries(vespa_vision_node PRIVATE
+    ${GSTREAMER_LIBRARIES}
     ${GST_LIBRARIES}
     ${GST_APP_LIBRARIES}
     CUDA::cudart
+    pthread
 )
+
+# --- TEST SUITE (Creates a separate executable specifically for validation) ---
+add_executable(vespa_protocol_test 
+    "${CMAKE_SOURCE_DIR}/../tests/test_protocol.cpp"
+)
+target_include_directories(vespa_protocol_test PRIVATE ${VESPA_COMMON_INC})
