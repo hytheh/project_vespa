@@ -20,3 +20,23 @@ __pycache__/
 
 # CATIA (Optional: usually you only version stable revisions, not locks)
 *.CATSystem
+
+# Compilation output
+build/
+bin/
+*.o
+*.so
+lib/
+
+# PlatformIO
+.pio/
+.vscode/
+
+# IDE settings
+.idea/
+*.swp
+*.DS_Store
+
+# Local secrets (never commit these)
+secrets.h
+.env
