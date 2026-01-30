@@ -214,6 +214,78 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/pipeline/custom_probes.o: src/pipeline/custom_probes.cpp.o
+.PHONY : src/pipeline/custom_probes.o
+
+# target to build an object file
+src/pipeline/custom_probes.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o
+.PHONY : src/pipeline/custom_probes.cpp.o
+
+src/pipeline/custom_probes.i: src/pipeline/custom_probes.cpp.i
+.PHONY : src/pipeline/custom_probes.i
+
+# target to preprocess a source file
+src/pipeline/custom_probes.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.i
+.PHONY : src/pipeline/custom_probes.cpp.i
+
+src/pipeline/custom_probes.s: src/pipeline/custom_probes.cpp.s
+.PHONY : src/pipeline/custom_probes.s
+
+# target to generate assembly for a file
+src/pipeline/custom_probes.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.s
+.PHONY : src/pipeline/custom_probes.cpp.s
+
+src/pipeline/vespa_pipeline.o: src/pipeline/vespa_pipeline.cpp.o
+.PHONY : src/pipeline/vespa_pipeline.o
+
+# target to build an object file
+src/pipeline/vespa_pipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o
+.PHONY : src/pipeline/vespa_pipeline.cpp.o
+
+src/pipeline/vespa_pipeline.i: src/pipeline/vespa_pipeline.cpp.i
+.PHONY : src/pipeline/vespa_pipeline.i
+
+# target to preprocess a source file
+src/pipeline/vespa_pipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.i
+.PHONY : src/pipeline/vespa_pipeline.cpp.i
+
+src/pipeline/vespa_pipeline.s: src/pipeline/vespa_pipeline.cpp.s
+.PHONY : src/pipeline/vespa_pipeline.s
+
+# target to generate assembly for a file
+src/pipeline/vespa_pipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.s
+.PHONY : src/pipeline/vespa_pipeline.cpp.s
+
+src/vespa_worker.o: src/vespa_worker.cpp.o
+.PHONY : src/vespa_worker.o
+
+# target to build an object file
+src/vespa_worker.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o
+.PHONY : src/vespa_worker.cpp.o
+
+src/vespa_worker.i: src/vespa_worker.cpp.i
+.PHONY : src/vespa_worker.i
+
+# target to preprocess a source file
+src/vespa_worker.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.i
+.PHONY : src/vespa_worker.cpp.i
+
+src/vespa_worker.s: src/vespa_worker.cpp.s
+.PHONY : src/vespa_worker.s
+
+# target to generate assembly for a file
+src/vespa_worker.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision_node.dir/build.make CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.s
+.PHONY : src/vespa_worker.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -233,6 +305,15 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/pipeline/custom_probes.o"
+	@echo "... src/pipeline/custom_probes.i"
+	@echo "... src/pipeline/custom_probes.s"
+	@echo "... src/pipeline/vespa_pipeline.o"
+	@echo "... src/pipeline/vespa_pipeline.i"
+	@echo "... src/pipeline/vespa_pipeline.s"
+	@echo "... src/vespa_worker.o"
+	@echo "... src/vespa_worker.i"
+	@echo "... src/vespa_worker.s"
 .PHONY : help
 
 

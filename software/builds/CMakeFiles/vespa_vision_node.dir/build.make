@@ -97,20 +97,68 @@ CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/hytheh/project_vespa/software/vision_node/src/comms/vespa_can.cpp -o CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.s
 
+CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o: CMakeFiles/vespa_vision_node.dir/flags.make
+CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o: /home/hytheh/project_vespa/software/vision_node/src/vespa_worker.cpp
+CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o: CMakeFiles/vespa_vision_node.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/hytheh/project_vespa/software/builds/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o -MF CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o.d -o CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o -c /home/hytheh/project_vespa/software/vision_node/src/vespa_worker.cpp
+
+CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/hytheh/project_vespa/software/vision_node/src/vespa_worker.cpp > CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.i
+
+CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/hytheh/project_vespa/software/vision_node/src/vespa_worker.cpp -o CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.s
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o: CMakeFiles/vespa_vision_node.dir/flags.make
+CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o: /home/hytheh/project_vespa/software/vision_node/src/pipeline/vespa_pipeline.cpp
+CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o: CMakeFiles/vespa_vision_node.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/hytheh/project_vespa/software/builds/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o -MF CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o.d -o CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o -c /home/hytheh/project_vespa/software/vision_node/src/pipeline/vespa_pipeline.cpp
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/hytheh/project_vespa/software/vision_node/src/pipeline/vespa_pipeline.cpp > CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.i
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/hytheh/project_vespa/software/vision_node/src/pipeline/vespa_pipeline.cpp -o CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.s
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o: CMakeFiles/vespa_vision_node.dir/flags.make
+CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o: /home/hytheh/project_vespa/software/vision_node/src/pipeline/custom_probes.cpp
+CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o: CMakeFiles/vespa_vision_node.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/hytheh/project_vespa/software/builds/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o -MF CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o.d -o CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o -c /home/hytheh/project_vespa/software/vision_node/src/pipeline/custom_probes.cpp
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /home/hytheh/project_vespa/software/vision_node/src/pipeline/custom_probes.cpp > CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.i
+
+CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /home/hytheh/project_vespa/software/vision_node/src/pipeline/custom_probes.cpp -o CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.s
+
 # Object files for target vespa_vision_node
 vespa_vision_node_OBJECTS = \
 "CMakeFiles/vespa_vision_node.dir/src/main.cpp.o" \
-"CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.o"
+"CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.o" \
+"CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o" \
+"CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o" \
+"CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o"
 
 # External object files for target vespa_vision_node
 vespa_vision_node_EXTERNAL_OBJECTS =
 
 vespa_vision_node: CMakeFiles/vespa_vision_node.dir/src/main.cpp.o
 vespa_vision_node: CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.o
+vespa_vision_node: CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o
+vespa_vision_node: CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o
+vespa_vision_node: CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o
 vespa_vision_node: CMakeFiles/vespa_vision_node.dir/build.make
 vespa_vision_node: /usr/local/cuda-12.6/lib64/libcudart.so
 vespa_vision_node: CMakeFiles/vespa_vision_node.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/hytheh/project_vespa/software/builds/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Linking CXX executable vespa_vision_node"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/hytheh/project_vespa/software/builds/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Linking CXX executable vespa_vision_node"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/vespa_vision_node.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

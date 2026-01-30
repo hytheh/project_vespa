@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/hytheh/project_vespa/software/vision_node/include -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include -I/usr/local/cuda-12.6/include -I/home/hytheh/project_vespa/software/vision_node/../common/inc
+CXX_INCLUDES = -I/home/hytheh/project_vespa/software/vision_node/include -I/usr/include/gstreamer-1.0 -I/usr/include/glib-2.0 -I/usr/lib/aarch64-linux-gnu/glib-2.0/include -I/usr/local/cuda-12.6/include -I/home/hytheh/project_vespa/software/vision_node/../common/inc -I/opt/nvidia/deepstream/deepstream/sources/includes
 
 CXX_FLAGS = -std=gnu++17
 

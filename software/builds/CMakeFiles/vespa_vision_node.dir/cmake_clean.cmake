@@ -3,6 +3,12 @@ file(REMOVE_RECURSE
   "CMakeFiles/vespa_vision_node.dir/src/comms/vespa_can.cpp.o.d"
   "CMakeFiles/vespa_vision_node.dir/src/main.cpp.o"
   "CMakeFiles/vespa_vision_node.dir/src/main.cpp.o.d"
+  "CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o"
+  "CMakeFiles/vespa_vision_node.dir/src/pipeline/custom_probes.cpp.o.d"
+  "CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o"
+  "CMakeFiles/vespa_vision_node.dir/src/pipeline/vespa_pipeline.cpp.o.d"
+  "CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o"
+  "CMakeFiles/vespa_vision_node.dir/src/vespa_worker.cpp.o.d"
   "vespa_vision_node"
   "vespa_vision_node.pdb"
 )

@@ -10,19 +10,18 @@
 
 /**
  * @struct VespaWorkItem
- * @brief Represents a single detection target to be processed.
+ * @brief Represents a detection to be processed by the worker thread.
+ *        Contains bounding box information and metadata.
  */
 struct VespaWorkItem {
-    uint64_t timestamp_ns; ///< Capture timestamp in nanoseconds
-    uint64_t object_id;    ///< Unique ID from the Tracker
-    
-    // 2D Bounding Box (Camera Left)
-    float bbox_x;
-    float bbox_y;
-    float bbox_w;
-    float bbox_h;
-
-    float confidence;      ///< Detection confidence (0.0 - 1.0)
+    float x;            ///< Bounding box top-left X coordinate
+    float y;            ///< Bounding box top-left Y coordinate
+    float w;        ///< Bounding box width
+    float h;       ///< Bounding box height
+    int class_id;       ///< Detected object class ID
+    float confidence;   ///< Detection confidence score
+    uint64_t timestamp; ///< Timestamp of the frame (e.g., nanoseconds)
+    uint64_t object_id; ///< Unique tracking ID for the object
 };
 
 #endif // VESPA_TYPES_HPP
