@@ -20,14 +20,28 @@
 #include <thread>
 #include <chrono>
 #include "vespa_can.hpp"
+#include "vespa_worker.hpp"
+#include "vespa_pipeline.hpp"
 
 // --- Global Shutdown Signal ---
 std::atomic<bool> g_running(true);
+VespaPipeline* g_pipeline_ptr = nullptr;
+VespaWorker* g_worker_ptr = nullptr;
 
 // --- Signal Handler ---
 void signal_handler(int signum) {
     std::cout << "\n[V.E.S.P.A] Interrupt signal (" << signum << ") received.\n";
     g_running = false;
+    
+    // Stop the GMainLoop if it's running
+    // Note: In a real app, we might use a GUnixSignalWatch, 
+    // but this is sufficient for the "Hello World"
+    if (g_pipeline_ptr) {
+        // We can't easily stop the GMainLoop from here without a reference to it
+        // or using g_main_loop_quit() if we made the loop global.
+        // For now, we rely on the application teardown sequence.
+        exit(0); 
+    }
 }
 
 int main(int argc, char** argv) {
@@ -40,23 +54,30 @@ int main(int argc, char** argv) {
     // 2. Initialize CAN Interface
     VespaCAN can_bus("can0"); 
     if (!can_bus.init()) {
-        std::cerr << "[Error] CAN Init failed. Continuing in offline mode..." << std::endl;
+        std::cerr << "[Warning] CAN Init failed. Running in offline mode." << std::endl;
     }
 
-    // 3. TODO: Initialize DeepStream Pipeline
-    // VespaPipeline pipeline;
-    // pipeline.init(argc, argv);
+    // 3. Initialize Worker (The "Brain")
+    VespaWorker worker;
+    g_worker_ptr = &worker;
+    worker.start();
 
-    // 4. Main Application Loop
-    std::cout << "[V.E.S.P.A] System Ready. Entering Main Loop..." << std::endl; 
+    // 4. Initialize Pipeline (The "Eyes")
+    VespaPipeline pipeline;
+    g_pipeline_ptr = &pipeline;
+    pipeline.init(argc, argv, &worker);
+
+    // 5. Start The Hunt
+    std::cout << "[V.E.S.P.A] System Ready. Starting Pipeline..." << std::endl; 
+    pipeline.start();
+
+    // 6. Enter Blocking Loop
+    // This will block until an error or Ctrl+C
+    pipeline.run();
+
+    // 7. Cleanup
+    std::cout << "[V.E.S.P.A] Shutting down..." << std::endl;
+    worker.stop();
     
-    while (g_running) {
-        // Placeholder for main loop logic
-        // If using GMainLoop, this while loop might be replaced by loop.run()
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-
-    std::cout << "[V.E.S.P.A] Shutdown Complete." << std::endl;
-
     return 0;
 }

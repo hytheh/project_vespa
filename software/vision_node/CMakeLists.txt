@@ -18,12 +18,9 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Dependencies ---
-# GStreamer (The engine)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
 pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
-
-# CUDA (The accelerator)
 find_package(CUDAToolkit REQUIRED)
 
 # --- Include Directories ---
@@ -35,27 +32,36 @@ include_directories(
     ${GST_APP_INCLUDE_DIRS}
     ${CUDAToolkit_INCLUDE_DIRS}
     ${VESPA_COMMON_INC}
+    "/opt/nvidia/deepstream/deepstream/sources/includes"
 )
 
-# --- Source Files (More will be added as we build) ---
+# --- Source Files ---
 set(VISION_SRC
     src/main.cpp
     src/comms/vespa_can.cpp
     src/vespa_worker.cpp
-    )
+    src/pipeline/vespa_pipeline.cpp
+    src/pipeline/custom_probes.cpp
+)
 
-# --- Executable: Vision node ---
+# --- Executable ---
+link_directories("/opt/nvidia/deepstream/deepstream/lib")
+
 add_executable(vespa_vision_node ${VISION_SRC})
 target_link_libraries(vespa_vision_node PRIVATE
     ${GSTREAMER_LIBRARIES}
-    ${GST_LIBRARIES}
     ${GST_APP_LIBRARIES}
     CUDA::cudart
     pthread
+    nvdsgst_meta
+    nvds_meta
 )
 
-# --- TEST SUITE (Creates a separate executable specifically for validation) ---
-add_executable(vespa_protocol_test 
-    "${CMAKE_SOURCE_DIR}/../tests/test_protocol.cpp"
-)
+# --- CRITICAL FIX: Copy Configs to Build Directory ---
+# This ensures ./vespa_vision_node can find "deepstream_config/..."
+file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/deepstream_config 
+     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+
+# --- Test Suite ---
+add_executable(vespa_protocol_test "${CMAKE_SOURCE_DIR}/../tests/test_protocol.cpp")
 target_include_directories(vespa_protocol_test PRIVATE ${VESPA_COMMON_INC})
