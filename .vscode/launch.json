@@ -1,0 +1,24 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Vision Node",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/software/builds/vespa_vision_node",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/software/builds",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}

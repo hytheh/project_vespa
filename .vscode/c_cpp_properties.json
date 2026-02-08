@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "Jetson Orin Nano",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/usr/local/cuda/include",
+                "/usr/include/aarch64-linux-gnu",
+                "/opt/nvidia/vpi3/include",
+                "/usr/include/opencv4"
+            ],
+            "defines": [
+                "JETSON_ORIN",
+                "VESPA_DEBUG"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c17",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-arm64"
+        }
+    ],
+    "version": 4
+}
