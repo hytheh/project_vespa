@@ -1,67 +1,55 @@
-# @file CMakeLists.txt
-# @brief Master Build Configuration for the Vision Node (Jetson Orin Nano).
-#
-# @section DEPENDENCIES
-# - CUDA 12.x (for VPI and TensorRT)
-# - DeepStream 7.1 (GStreamer 1.0)
-# - VPI 3.x (Vision Programming Interface)
-# - SocketCAN (Linux Kernel)
-#
-# @section OUTPUT
-# Generates the executable `vespa_vision_node` in the `build/bin` directory.
-# Links against customized libraries for Pipeline, Depth, and Ballistics.
-
-cmake_minimum_required(VERSION 3.10)
-project(vespa_vision_node LANGUAGES CXX C)
+cmake_minimum_required(VERSION 3.14)
+project(VisionNode VERSION 0.1.0 LANGUAGES C CXX CUDA)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Dependencies ---
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GSTREAMER REQUIRED gstreamer-1.0)
-pkg_check_modules(GST_APP REQUIRED gstreamer-app-1.0)
-find_package(CUDAToolkit REQUIRED)
+# CUDA
+find_package(CUDA REQUIRED)
+
+# VPI (Vision Programming Interface) for Lens Distortion & Scaling [cite: 128]
+# Note: Path may vary slightly based on Jetpack version (VPI 2 vs 3)
+find_package(vpi REQUIRED)
+
+# OpenCV (Mainly for calibration data loading and debug display)
+find_package(OpenCV REQUIRED)
+
+# TensorRT (For Inference)
+# Often requires manual path setting on Jetson if not in standard path
+include_directories(/usr/include/aarch64-linux-gnu)
+link_directories(/usr/lib/aarch64-linux-gnu)
+
+# Threads & SocketCAN
+find_package(Threads REQUIRED)
 
 # --- Include Directories ---
-set(VESPA_COMMON_INC "${CMAKE_SOURCE_DIR}/../common/inc")
-
 include_directories(
-    include
-    ${GST_INCLUDE_DIRS}
-    ${GST_APP_INCLUDE_DIRS}
-    ${CUDAToolkit_INCLUDE_DIRS}
-    ${VESPA_COMMON_INC}
-    "/opt/nvidia/deepstream/deepstream/sources/includes"
+    ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/../common
+    ${CUDA_INCLUDE_DIRS}
+    ${VPI_INCLUDE_DIRS}
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 # --- Source Files ---
-set(VISION_SRC
-    src/main.cpp
-    src/comms/vespa_can.cpp
-    src/vespa_worker.cpp
-    src/pipeline/vespa_pipeline.cpp
-    src/pipeline/custom_probes.cpp
+file(GLOB_RECURSE SOURCES 
+    "src/*.cpp" 
+    "src/*.cu"
 )
 
 # --- Executable ---
-link_directories("/opt/nvidia/deepstream/deepstream/lib")
+add_executable(vespa_vision ${SOURCES})
 
-add_executable(vespa_vision_node ${VISION_SRC})
-target_link_libraries(vespa_vision_node PRIVATE
-    ${GSTREAMER_LIBRARIES}
-    ${GST_APP_LIBRARIES}
-    CUDA::cudart
+# --- Linking ---
+target_link_libraries(vespa_vision PRIVATE
+    ${CUDA_LIBRARIES}
+    ${OpenCV_LIBS}
+    vpi
+    nvinfer          # TensorRT
+    nvparsers        # TensorRT Parsers
     pthread
-    nvdsgst_meta
-    nvds_meta
 )
 
-# --- CRITICAL FIX: Copy Configs to Build Directory ---
-# This ensures ./vespa_vision_node can find "deepstream_config/..."
-file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/deepstream_config 
-     DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-
-# --- Test Suite ---
-add_executable(vespa_protocol_test "${CMAKE_SOURCE_DIR}/../tests/test_protocol.cpp")
-target_include_directories(vespa_protocol_test PRIVATE ${VESPA_COMMON_INC})
+# Compiler flags for Jetson Orin (Ampere Architecture)
+target_compile_options(vespa_vision PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:-gencode arch=compute_87,code=sm_87>)

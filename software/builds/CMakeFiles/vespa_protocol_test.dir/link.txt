@@ -1,1 +1,0 @@
-/usr/bin/c++ CMakeFiles/vespa_protocol_test.dir/home/hytheh/project_vespa/software/tests/test_protocol.cpp.o -o vespa_protocol_test   -L/opt/nvidia/deepstream/deepstream/lib 
