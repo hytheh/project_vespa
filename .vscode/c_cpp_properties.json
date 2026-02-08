@@ -7,7 +7,9 @@
                 "/usr/local/cuda/include",
                 "/usr/include/aarch64-linux-gnu",
                 "/opt/nvidia/vpi3/include",
-                "/usr/include/opencv4"
+                "/usr/include/opencv4",
+                "/opt/nvidia/deepstream/deepstream/sources/includes",
+                "/usr/src/jetson_multimedia_api/include"
             ],
             "defines": [
                 "JETSON_ORIN",
