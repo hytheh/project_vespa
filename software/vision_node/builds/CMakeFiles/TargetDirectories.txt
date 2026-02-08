@@ -1,0 +1,4 @@
+/home/hytheh/project_vespa/software/vision_node/builds/CMakeFiles/vespa_vision.dir
+/home/hytheh/project_vespa/software/vision_node/builds/CMakeFiles/test_camera_hal.dir
+/home/hytheh/project_vespa/software/vision_node/builds/CMakeFiles/edit_cache.dir
+/home/hytheh/project_vespa/software/vision_node/builds/CMakeFiles/rebuild_cache.dir

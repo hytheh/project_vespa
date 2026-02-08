@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/test_camera_hal.dir/src/test_camera_hal.cpp.o CMakeFiles/test_camera_hal.dir/src/CameraInterface.cpp.o -o test_camera_hal   -L/usr/lib/aarch64-linux-gnu/tegra  -Wl,-rpath,/usr/lib/aarch64-linux-gnu/tegra -lpthread -li2c -lnvbufsurface 
