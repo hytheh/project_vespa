@@ -1,4 +1,0 @@
-/home/hytheh/project_vespa/software/builds/CMakeFiles/vespa_vision_node.dir
-/home/hytheh/project_vespa/software/builds/CMakeFiles/vespa_protocol_test.dir
-/home/hytheh/project_vespa/software/builds/CMakeFiles/edit_cache.dir
-/home/hytheh/project_vespa/software/builds/CMakeFiles/rebuild_cache.dir
