@@ -18,6 +18,14 @@ namespace VESPA
         size_t length;
     };
 
+    struct CameraSettings
+    {
+        int exposure = 681;
+        int gain = 100;
+        int h_flip = 0;
+        int v_flip = 0;
+    };
+
     class CameraInterface
     {
     public:
@@ -29,6 +37,8 @@ namespace VESPA
         void stopStream();
         bool captureFrame(const std::string &filename);
 
+        void loadSettings(const std::string &configPath, const std::string &cameraKey);
+
         // New Orchestration Methods
         void enablePWM();
         void disablePWM();
@@ -37,6 +47,7 @@ namespace VESPA
         std::string m_devicePath;
         int m_fd;
         FrameBuffer m_buffers[BUFFER_COUNT];
+        CameraSettings m_settings;
 
         std::string findSubDevice(const std::string &videoDevice);
         void setControl(uint32_t id, int value, const std::string &name);

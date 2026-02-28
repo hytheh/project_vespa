@@ -61,6 +61,7 @@ target_include_directories(test_camera_hal BEFORE PRIVATE
     ${CMAKE_SOURCE_DIR}/src
     ${CMAKE_SOURCE_DIR}/include
     /usr/src/jetson_multimedia_api/include
+    ${OpenCV_INCLUDE_DIRS}
 )
 
 # Linked libraries (Removed nvbufsurfacemapping)
@@ -68,6 +69,7 @@ target_link_libraries(test_camera_hal
     pthread 
     i2c 
     nvbufsurface
+    ${OpenCV_LIBS}
 )
 
 message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2).")

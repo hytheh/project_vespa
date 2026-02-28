@@ -12,7 +12,8 @@
 #include <linux/videodev2.h>
 #include <thread>
 #include <chrono>
-#include <cstdlib> // For std::system
+#include <cstdlib>          // For std::system
+#include <opencv2/core.hpp> // For FileStorage
 
 // Adjust these paths to match your actual script locations!
 #define CMD_PWM_START "sudo /home/hytheh/project_vespa/software/vision_node/PWM_sync_start.sh"
@@ -127,6 +128,28 @@ namespace VESPA
         }
     }
 
+    void CameraInterface::loadSettings(const std::string &configPath, const std::string &cameraKey)
+    {
+        try
+        {
+            cv::FileStorage fs(configPath, cv::FileStorage::READ);
+            if (!fs.isOpened())
+                throw std::runtime_error("Could not open config file");
+
+            cv::FileNode cam = fs[cameraKey];
+            m_settings.exposure = (int)cam["exposure"];
+            m_settings.gain = (int)cam["analogue_gain"];
+            m_settings.h_flip = (int)cam["horizontal_flip"];
+            m_settings.v_flip = (int)cam["vertical_flip"];
+
+            std::cout << "[HAL] Loaded config for " << cameraKey << ": Exp=" << m_settings.exposure << std::endl;
+        }
+        catch (...)
+        {
+            std::cerr << "[HAL] Config load failed for " << cameraKey << ". Using hardware defaults." << std::endl;
+        }
+    }
+
     void CameraInterface::startStream()
     {
         // 1. Queue Buffers
@@ -153,7 +176,10 @@ namespace VESPA
         setControl(V4L2_CID_ARDUCAM_DISABLE_TIMEOUT, 1, "Disable Frame Timeout");
         setControl(V4L2_CID_ARDUCAM_FRAME_TIMEOUT, 12000, "Frame Timeout");
         setControl(V4L2_CID_ARDUCAM_TRIGGER_MODE, 1, "Trigger Mode");
-        setControl(V4L2_CID_ARDUCAM_EXPOSURE, 5000, "Exposure");
+        setControl(0x00980911, m_settings.exposure, "Exposure");
+        setControl(0x009e0903, m_settings.gain, "Analogue Gain");
+        setControl(0x00980914, m_settings.h_flip, "Horizontal Flip");
+        setControl(0x00980915, m_settings.v_flip, "Vertical Flip");
 
         // 5. Drain Junk (PWM is OFF, so this clears the Master Mode bursts)
         std::cout << "[HAL] Draining junk frames..." << std::endl;
