@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/hytheh/project_vespa/software/vision_node/src -I/home/hytheh/project_vespa/software/vision_node/include -I/usr/src/jetson_multimedia_api/include
+CXX_INCLUDES = -I/home/hytheh/project_vespa/software/vision_node/src -I/home/hytheh/project_vespa/software/vision_node/include -I/usr/src/jetson_multimedia_api/include -isystem /usr/include/opencv4
 
 CXX_FLAGS = -std=gnu++17
 
