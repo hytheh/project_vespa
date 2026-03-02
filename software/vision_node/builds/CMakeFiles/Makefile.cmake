@@ -138,4 +138,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/vespa_vision.dir/DependInfo.cmake"
   "CMakeFiles/test_camera_hal.dir/DependInfo.cmake"
+  "CMakeFiles/test_stereo_pipeline.dir/DependInfo.cmake"
   )

@@ -26,8 +26,8 @@ link_directories("/usr/lib/aarch64-linux-gnu/tegra")
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE COMMON_SOURCES "../common/*.cpp")
 
-# Exclude the standalone test from the main executable sources
-list(FILTER SOURCES EXCLUDE REGEX ".*test_camera_hal.cpp")
+# Exclude standalone tests from the main executable sources
+list(FILTER SOURCES EXCLUDE REGEX ".*test_camera_hal.cpp|.*test_stereo_pipeline.cpp")
 
 # --- Executable: vespa_vision ---
 add_executable(vespa_vision ${SOURCES} ${COMMON_SOURCES})
@@ -71,5 +71,30 @@ target_link_libraries(test_camera_hal
     nvbufsurface
     ${OpenCV_LIBS}
 )
+
+# --- Executable: test_stereo_pipeline ---
+# Compiles the Phase 3 synthetic test harness
+add_executable(test_stereo_pipeline 
+    src/test_stereo_pipeline.cpp 
+    src/ArUcoTracker.cpp 
+    src/StereoTriangulator.cpp
+)
+
+target_include_directories(test_stereo_pipeline BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+# Link OpenCV for ArUco and matrix operations
+target_link_libraries(test_stereo_pipeline 
+    ${OpenCV_LIBS}
+)
+
+# Enable console debug outputs for our Tracker and Triangulator
+target_compile_definitions(test_stereo_pipeline PRIVATE DEBUG_MODE)
+
+
+
+
 
 message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2).")
