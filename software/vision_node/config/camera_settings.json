@@ -1,14 +1,14 @@
 {
     "camera0": {
-        "exposure": 720,
-        "analogue_gain": 100,
+        "exposure": 276,
+        "analogue_gain": 260,
         "horizontal_flip": 0,
         "vertical_flip": 0
     },
     "camera1": {
-        "exposure": 720,
-        "analogue_gain": 100,
-        "horizontal_flip": 1,
-        "vertical_flip": 1
+        "exposure": 276,
+        "analogue_gain": 260,
+        "horizontal_flip": 0,
+        "vertical_flip": 0
     }
 }

@@ -142,6 +142,46 @@ test_camera_hal/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/build
 .PHONY : test_camera_hal/fast
 
+#=============================================================================
+# Target rules for targets named test_stereo_pipeline
+
+# Build rule for target.
+test_stereo_pipeline: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_stereo_pipeline
+.PHONY : test_stereo_pipeline
+
+# fast build rule for target.
+test_stereo_pipeline/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/build
+.PHONY : test_stereo_pipeline/fast
+
+src/ArUcoTracker.o: src/ArUcoTracker.cpp.o
+.PHONY : src/ArUcoTracker.o
+
+# target to build an object file
+src/ArUcoTracker.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/ArUcoTracker.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/ArUcoTracker.cpp.o
+.PHONY : src/ArUcoTracker.cpp.o
+
+src/ArUcoTracker.i: src/ArUcoTracker.cpp.i
+.PHONY : src/ArUcoTracker.i
+
+# target to preprocess a source file
+src/ArUcoTracker.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/ArUcoTracker.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/ArUcoTracker.cpp.i
+.PHONY : src/ArUcoTracker.cpp.i
+
+src/ArUcoTracker.s: src/ArUcoTracker.cpp.s
+.PHONY : src/ArUcoTracker.s
+
+# target to generate assembly for a file
+src/ArUcoTracker.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/ArUcoTracker.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/ArUcoTracker.cpp.s
+.PHONY : src/ArUcoTracker.cpp.s
+
 src/CameraInterface.o: src/CameraInterface.cpp.o
 .PHONY : src/CameraInterface.o
 
@@ -217,6 +257,33 @@ src/Orchestrator.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/Orchestrator.cpp.s
 .PHONY : src/Orchestrator.cpp.s
 
+src/StereoTriangulator.o: src/StereoTriangulator.cpp.o
+.PHONY : src/StereoTriangulator.o
+
+# target to build an object file
+src/StereoTriangulator.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/StereoTriangulator.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/StereoTriangulator.cpp.o
+.PHONY : src/StereoTriangulator.cpp.o
+
+src/StereoTriangulator.i: src/StereoTriangulator.cpp.i
+.PHONY : src/StereoTriangulator.i
+
+# target to preprocess a source file
+src/StereoTriangulator.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/StereoTriangulator.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/StereoTriangulator.cpp.i
+.PHONY : src/StereoTriangulator.cpp.i
+
+src/StereoTriangulator.s: src/StereoTriangulator.cpp.s
+.PHONY : src/StereoTriangulator.s
+
+# target to generate assembly for a file
+src/StereoTriangulator.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/StereoTriangulator.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/StereoTriangulator.cpp.s
+.PHONY : src/StereoTriangulator.cpp.s
+
 src/Tracker.o: src/Tracker.cpp.o
 .PHONY : src/Tracker.o
 
@@ -289,6 +356,30 @@ src/test_camera_hal.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/test_camera_hal.cpp.s
 .PHONY : src/test_camera_hal.cpp.s
 
+src/test_stereo_pipeline.o: src/test_stereo_pipeline.cpp.o
+.PHONY : src/test_stereo_pipeline.o
+
+# target to build an object file
+src/test_stereo_pipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.o
+.PHONY : src/test_stereo_pipeline.cpp.o
+
+src/test_stereo_pipeline.i: src/test_stereo_pipeline.cpp.i
+.PHONY : src/test_stereo_pipeline.i
+
+# target to preprocess a source file
+src/test_stereo_pipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.i
+.PHONY : src/test_stereo_pipeline.cpp.i
+
+src/test_stereo_pipeline.s: src/test_stereo_pipeline.cpp.s
+.PHONY : src/test_stereo_pipeline.s
+
+# target to generate assembly for a file
+src/test_stereo_pipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.s
+.PHONY : src/test_stereo_pipeline.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -298,7 +389,11 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test_camera_hal"
+	@echo "... test_stereo_pipeline"
 	@echo "... vespa_vision"
+	@echo "... src/ArUcoTracker.o"
+	@echo "... src/ArUcoTracker.i"
+	@echo "... src/ArUcoTracker.s"
 	@echo "... src/CameraInterface.o"
 	@echo "... src/CameraInterface.i"
 	@echo "... src/CameraInterface.s"
@@ -308,6 +403,9 @@ help:
 	@echo "... src/Orchestrator.o"
 	@echo "... src/Orchestrator.i"
 	@echo "... src/Orchestrator.s"
+	@echo "... src/StereoTriangulator.o"
+	@echo "... src/StereoTriangulator.i"
+	@echo "... src/StereoTriangulator.s"
 	@echo "... src/Tracker.o"
 	@echo "... src/Tracker.i"
 	@echo "... src/Tracker.s"
@@ -317,6 +415,9 @@ help:
 	@echo "... src/test_camera_hal.o"
 	@echo "... src/test_camera_hal.i"
 	@echo "... src/test_camera_hal.s"
+	@echo "... src/test_stereo_pipeline.o"
+	@echo "... src/test_stereo_pipeline.i"
+	@echo "... src/test_stereo_pipeline.s"
 .PHONY : help
 
 

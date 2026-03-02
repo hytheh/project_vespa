@@ -1,0 +1,8 @@
+{
+    "baseline_mm": 120.0,
+    "focal_length_px": 800.0,
+    "epipolar_tolerance_px": 5.0,
+    "min_disparity_px": 1.0,
+    "center_x_px": 640.0,
+    "center_y_px": 400.0
+}
