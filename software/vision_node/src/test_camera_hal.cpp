@@ -4,24 +4,26 @@
 #include <chrono>
 #include <csignal>
 #include <memory>
+#include <iomanip> // For formatting time output
 
 // Global pointer for signal handler
 std::unique_ptr<VESPA::CameraInterface> g_cam;
 
 void signalHandler(int signum)
 {
-    std::cout << "\n[TEST] Interrupt signal (" << signum << ") received." << std::endl;
+    std::cout << "\n\n[TEST] Interrupt signal (" << signum << ") received." << std::endl;
     if (g_cam)
     {
         std::cout << "[TEST] Emergency PWM Shutdown..." << std::endl;
         g_cam->disablePWM();
     }
+    std::cout << "[TEST] Exiting cleanly." << std::endl;
     exit(signum);
 }
 
 int main(int argc, char **argv)
 {
-    std::cout << "=== VESPA HAL TEST: ORCHESTRATOR MODE ===" << std::endl;
+    std::cout << "=== VESPA HAL TEST: TRIGGER VERIFICATION MODE ===" << std::endl;
 
     std::string device = "/dev/video0";
     if (argc > 1)
@@ -34,36 +36,76 @@ int main(int argc, char **argv)
     {
         g_cam = std::make_unique<VESPA::CameraInterface>(device);
 
-        // 1. Init & Stream On (PWM is OFF, Camera enters Slave Mode)
+        // --- THE CRITICAL FIX: PWM FIRST ---
+        // Start the hardware trigger BEFORE we wake the camera up or open the stream.
+        // The Jetson Tegra driver needs to see these pulses immediately during STREAMON,
+        // otherwise it will time out and force the Arducam MCU back into Master Mode.
+        std::cout << "\n[TEST] Starting 50 Hz PWM Heartbeat..." << std::endl;
+        // g_cam->enablePWM();
+
+        // Give the Jetson's GPIO pins time to stabilize
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        // 1. Init & Stream On (Camera boots up, sees the PWM, and locks to 50 Hz)
         g_cam->init();
         g_cam->startStream();
 
-        // 2. Start Hardware Trigger
-        std::cout << "[TEST] Enabling PWM Trigger..." << std::endl;
-        g_cam->enablePWM();
+        // [PHASE 1] Measuring hardware frame deltas...
+        std::cout << "\n[PHASE 1] Measuring hardware frame deltas..." << std::endl;
 
-        // Give it 100ms to spin up
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        double current_ts = 0.0;
+        double previous_ts = 0.0;
 
-        // 3. Capture Loop
-        for (int i = 0; i < 10; ++i)
+        for (int i = 0; i < 20; ++i)
         {
-            std::cout << "[TEST] Requesting frame " << i << "..." << std::endl;
-            std::string fname = "frame_" + std::to_string(i) + ".pgm";
-
-            if (!g_cam->captureFrame(fname))
+            // Notice we pass current_ts as the second argument
+            if (!g_cam->captureFrame("", current_ts))
             {
                 std::cerr << "[TEST] Capture failed!" << std::endl;
                 break;
             }
-            std::cout << "  -> Saved: " << fname << std::endl;
+
+            if (i > 0)
+            {
+                double delta = current_ts - previous_ts;
+                std::cout << "  -> Frame " << i << " Hardware Delta: " << delta << " ms" << std::endl;
+            }
+
+            previous_ts = current_ts;
         }
 
-        std::cout << "[TEST] Complete. Shutting down..." << std::endl;
-
-        // 4. Shutdown
+        // --- PHASE 2: The "Pull the Plug" Test ---
+        std::cout << "\n[PHASE 2] Disabling PWM mid-stream..." << std::endl;
         g_cam->disablePWM();
-        g_cam->stopStream();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        std::cout << "[TEST] Attempting to capture frames with PWM OFF." << std::endl;
+        std::cout << "[TEST] The software watchdog should catch this within 200ms." << std::endl;
+
+        bool watchdogBite = false;
+        double dummy_ts = 0.0; // We need a dummy variable for the Phase 2 calls
+
+        for (int j = 0; j < 5; j++)
+        {
+            std::cout << "  -> Pulling post-PWM frame " << j << "..." << std::endl;
+
+            // Notice we pass dummy_ts here to satisfy the compiler
+            if (!g_cam->captureFrame("frame_leak_" + std::to_string(j) + ".pgm", dummy_ts))
+            {
+                watchdogBite = true;
+                break;
+            }
+        }
+
+        if (watchdogBite)
+        {
+            std::cout << "\n\033[1;32m[SUCCESS] Watchdog successfully caught the missing hardware trigger!\033[0m" << std::endl;
+        }
+        else
+        {
+            std::cerr << "\n\033[1;31m[FAILED] Frame captured even with PWM off!\033[0m" << std::endl;
+        }
     }
     catch (const std::exception &e)
     {

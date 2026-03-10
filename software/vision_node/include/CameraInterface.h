@@ -32,16 +32,13 @@ namespace VESPA
         CameraInterface(const std::string &devicePath);
         ~CameraInterface();
 
-        void init();
+        bool init(); // CHANGED: Now returns bool for the Orchestrator
         void startStream();
         void stopStream();
-        bool captureFrame(const std::string &filename);
+        bool captureFrame(const std::string &filename, double &timestamp_ms);
+        void flushQueue();
 
         void loadSettings(const std::string &configPath, const std::string &cameraKey);
-
-        // New Orchestration Methods
-        void enablePWM();
-        void disablePWM();
 
     private:
         std::string m_devicePath;

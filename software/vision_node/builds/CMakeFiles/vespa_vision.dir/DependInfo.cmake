@@ -10,11 +10,14 @@ set(CMAKE_DEPENDS_LANGUAGES
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/hytheh/project_vespa/software/vision_node/src/ArUcoTracker.cpp" "CMakeFiles/vespa_vision.dir/src/ArUcoTracker.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/ArUcoTracker.cpp.o.d"
   "/home/hytheh/project_vespa/software/vision_node/src/CameraInterface.cpp" "CMakeFiles/vespa_vision.dir/src/CameraInterface.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/CameraInterface.cpp.o.d"
+  "/home/hytheh/project_vespa/software/vision_node/src/HardwareSyncController.cpp" "CMakeFiles/vespa_vision.dir/src/HardwareSyncController.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/HardwareSyncController.cpp.o.d"
   "/home/hytheh/project_vespa/software/vision_node/src/InferenceEngine.cpp" "CMakeFiles/vespa_vision.dir/src/InferenceEngine.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/InferenceEngine.cpp.o.d"
   "/home/hytheh/project_vespa/software/vision_node/src/Orchestrator.cpp" "CMakeFiles/vespa_vision.dir/src/Orchestrator.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/Orchestrator.cpp.o.d"
   "/home/hytheh/project_vespa/software/vision_node/src/StereoTriangulator.cpp" "CMakeFiles/vespa_vision.dir/src/StereoTriangulator.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/StereoTriangulator.cpp.o.d"
   "/home/hytheh/project_vespa/software/vision_node/src/Tracker.cpp" "CMakeFiles/vespa_vision.dir/src/Tracker.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/Tracker.cpp.o.d"
-  "/home/hytheh/project_vespa/software/vision_node/src/main.cpp" "CMakeFiles/vespa_vision.dir/src/main.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/main.cpp.o.d"
+  "/home/hytheh/project_vespa/software/vision_node/src/test_camera_hal.cpp" "CMakeFiles/vespa_vision.dir/src/test_camera_hal.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/test_camera_hal.cpp.o.d"
+  "/home/hytheh/project_vespa/software/vision_node/src/test_hardware_sync.cpp" "CMakeFiles/vespa_vision.dir/src/test_hardware_sync.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/test_hardware_sync.cpp.o.d"
+  "/home/hytheh/project_vespa/software/vision_node/src/test_stereo_pipeline.cpp" "CMakeFiles/vespa_vision.dir/src/test_stereo_pipeline.cpp.o" "gcc" "CMakeFiles/vespa_vision.dir/src/test_stereo_pipeline.cpp.o.d"
   )
 
 # Targets to which this target links.

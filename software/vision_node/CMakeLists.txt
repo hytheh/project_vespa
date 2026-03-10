@@ -27,7 +27,11 @@ file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE COMMON_SOURCES "../common/*.cpp")
 
 # Exclude standalone tests from the main executable sources
-list(FILTER SOURCES EXCLUDE REGEX ".*test_camera_hal.cpp|.*test_stereo_pipeline.cpp")
+list(FILTER SOURCES EXCLUDE REGEX "
+.*test_camera_hal.cpp|
+.*test_stereo_pipeline.cpp|
+.*test_hardware_sync.cpp
+")
 
 # --- Executable: vespa_vision ---
 add_executable(vespa_vision ${SOURCES} ${COMMON_SOURCES})
@@ -93,7 +97,28 @@ target_link_libraries(test_stereo_pipeline
 # Enable console debug outputs for our Tracker and Triangulator
 target_compile_definitions(test_stereo_pipeline PRIVATE DEBUG_MODE)
 
+# --- Executable: test_hardware_sync ---
+# Bootstraps the dual-camera rig and tests the 60Hz PWM heartbeat
+add_executable(test_hardware_sync 
+    src/test_hardware_sync.cpp 
+    src/HardwareSyncController.cpp 
+    src/CameraInterface.cpp
+)
 
+target_include_directories(test_hardware_sync BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+    /usr/src/jetson_multimedia_api/include
+    ${OpenCV_INCLUDE_DIRS}
+)
+
+# Linked libraries
+target_link_libraries(test_hardware_sync 
+    pthread 
+    i2c 
+    nvbufsurface
+    ${OpenCV_LIBS}
+)
 
 
 

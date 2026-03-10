@@ -155,6 +155,19 @@ test_stereo_pipeline/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/build
 .PHONY : test_stereo_pipeline/fast
 
+#=============================================================================
+# Target rules for targets named test_hardware_sync
+
+# Build rule for target.
+test_hardware_sync: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 test_hardware_sync
+.PHONY : test_hardware_sync
+
+# fast build rule for target.
+test_hardware_sync/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/build
+.PHONY : test_hardware_sync/fast
+
 src/ArUcoTracker.o: src/ArUcoTracker.cpp.o
 .PHONY : src/ArUcoTracker.o
 
@@ -189,6 +202,7 @@ src/CameraInterface.o: src/CameraInterface.cpp.o
 src/CameraInterface.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/CameraInterface.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/CameraInterface.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/CameraInterface.cpp.o
 .PHONY : src/CameraInterface.cpp.o
 
 src/CameraInterface.i: src/CameraInterface.cpp.i
@@ -198,6 +212,7 @@ src/CameraInterface.i: src/CameraInterface.cpp.i
 src/CameraInterface.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/CameraInterface.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/CameraInterface.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/CameraInterface.cpp.i
 .PHONY : src/CameraInterface.cpp.i
 
 src/CameraInterface.s: src/CameraInterface.cpp.s
@@ -207,7 +222,35 @@ src/CameraInterface.s: src/CameraInterface.cpp.s
 src/CameraInterface.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/CameraInterface.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/CameraInterface.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/CameraInterface.cpp.s
 .PHONY : src/CameraInterface.cpp.s
+
+src/HardwareSyncController.o: src/HardwareSyncController.cpp.o
+.PHONY : src/HardwareSyncController.o
+
+# target to build an object file
+src/HardwareSyncController.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/HardwareSyncController.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/HardwareSyncController.cpp.o
+.PHONY : src/HardwareSyncController.cpp.o
+
+src/HardwareSyncController.i: src/HardwareSyncController.cpp.i
+.PHONY : src/HardwareSyncController.i
+
+# target to preprocess a source file
+src/HardwareSyncController.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/HardwareSyncController.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/HardwareSyncController.cpp.i
+.PHONY : src/HardwareSyncController.cpp.i
+
+src/HardwareSyncController.s: src/HardwareSyncController.cpp.s
+.PHONY : src/HardwareSyncController.s
+
+# target to generate assembly for a file
+src/HardwareSyncController.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/HardwareSyncController.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/HardwareSyncController.cpp.s
+.PHONY : src/HardwareSyncController.cpp.s
 
 src/InferenceEngine.o: src/InferenceEngine.cpp.o
 .PHONY : src/InferenceEngine.o
@@ -308,35 +351,12 @@ src/Tracker.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/Tracker.cpp.s
 .PHONY : src/Tracker.cpp.s
 
-src/main.o: src/main.cpp.o
-.PHONY : src/main.o
-
-# target to build an object file
-src/main.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/main.cpp.o
-.PHONY : src/main.cpp.o
-
-src/main.i: src/main.cpp.i
-.PHONY : src/main.i
-
-# target to preprocess a source file
-src/main.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/main.cpp.i
-.PHONY : src/main.cpp.i
-
-src/main.s: src/main.cpp.s
-.PHONY : src/main.s
-
-# target to generate assembly for a file
-src/main.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/main.cpp.s
-.PHONY : src/main.cpp.s
-
 src/test_camera_hal.o: src/test_camera_hal.cpp.o
 .PHONY : src/test_camera_hal.o
 
 # target to build an object file
 src/test_camera_hal.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_camera_hal.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/test_camera_hal.cpp.o
 .PHONY : src/test_camera_hal.cpp.o
 
@@ -345,6 +365,7 @@ src/test_camera_hal.i: src/test_camera_hal.cpp.i
 
 # target to preprocess a source file
 src/test_camera_hal.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_camera_hal.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/test_camera_hal.cpp.i
 .PHONY : src/test_camera_hal.cpp.i
 
@@ -353,14 +374,43 @@ src/test_camera_hal.s: src/test_camera_hal.cpp.s
 
 # target to generate assembly for a file
 src/test_camera_hal.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_camera_hal.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_camera_hal.dir/build.make CMakeFiles/test_camera_hal.dir/src/test_camera_hal.cpp.s
 .PHONY : src/test_camera_hal.cpp.s
+
+src/test_hardware_sync.o: src/test_hardware_sync.cpp.o
+.PHONY : src/test_hardware_sync.o
+
+# target to build an object file
+src/test_hardware_sync.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_hardware_sync.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/test_hardware_sync.cpp.o
+.PHONY : src/test_hardware_sync.cpp.o
+
+src/test_hardware_sync.i: src/test_hardware_sync.cpp.i
+.PHONY : src/test_hardware_sync.i
+
+# target to preprocess a source file
+src/test_hardware_sync.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_hardware_sync.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/test_hardware_sync.cpp.i
+.PHONY : src/test_hardware_sync.cpp.i
+
+src/test_hardware_sync.s: src/test_hardware_sync.cpp.s
+.PHONY : src/test_hardware_sync.s
+
+# target to generate assembly for a file
+src/test_hardware_sync.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_hardware_sync.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_hardware_sync.dir/build.make CMakeFiles/test_hardware_sync.dir/src/test_hardware_sync.cpp.s
+.PHONY : src/test_hardware_sync.cpp.s
 
 src/test_stereo_pipeline.o: src/test_stereo_pipeline.cpp.o
 .PHONY : src/test_stereo_pipeline.o
 
 # target to build an object file
 src/test_stereo_pipeline.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_stereo_pipeline.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.o
 .PHONY : src/test_stereo_pipeline.cpp.o
 
@@ -369,6 +419,7 @@ src/test_stereo_pipeline.i: src/test_stereo_pipeline.cpp.i
 
 # target to preprocess a source file
 src/test_stereo_pipeline.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_stereo_pipeline.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.i
 .PHONY : src/test_stereo_pipeline.cpp.i
 
@@ -377,6 +428,7 @@ src/test_stereo_pipeline.s: src/test_stereo_pipeline.cpp.s
 
 # target to generate assembly for a file
 src/test_stereo_pipeline.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vespa_vision.dir/build.make CMakeFiles/vespa_vision.dir/src/test_stereo_pipeline.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/test_stereo_pipeline.dir/build.make CMakeFiles/test_stereo_pipeline.dir/src/test_stereo_pipeline.cpp.s
 .PHONY : src/test_stereo_pipeline.cpp.s
 
@@ -389,6 +441,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... test_camera_hal"
+	@echo "... test_hardware_sync"
 	@echo "... test_stereo_pipeline"
 	@echo "... vespa_vision"
 	@echo "... src/ArUcoTracker.o"
@@ -397,6 +450,9 @@ help:
 	@echo "... src/CameraInterface.o"
 	@echo "... src/CameraInterface.i"
 	@echo "... src/CameraInterface.s"
+	@echo "... src/HardwareSyncController.o"
+	@echo "... src/HardwareSyncController.i"
+	@echo "... src/HardwareSyncController.s"
 	@echo "... src/InferenceEngine.o"
 	@echo "... src/InferenceEngine.i"
 	@echo "... src/InferenceEngine.s"
@@ -409,12 +465,12 @@ help:
 	@echo "... src/Tracker.o"
 	@echo "... src/Tracker.i"
 	@echo "... src/Tracker.s"
-	@echo "... src/main.o"
-	@echo "... src/main.i"
-	@echo "... src/main.s"
 	@echo "... src/test_camera_hal.o"
 	@echo "... src/test_camera_hal.i"
 	@echo "... src/test_camera_hal.s"
+	@echo "... src/test_hardware_sync.o"
+	@echo "... src/test_hardware_sync.i"
+	@echo "... src/test_hardware_sync.s"
 	@echo "... src/test_stereo_pipeline.o"
 	@echo "... src/test_stereo_pipeline.i"
 	@echo "... src/test_stereo_pipeline.s"
