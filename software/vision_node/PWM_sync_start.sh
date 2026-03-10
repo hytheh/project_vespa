@@ -6,11 +6,11 @@ PWM_NUM="0"
 PWM_DIR="/sys/class/pwm/${PWM_CHIP}"
 PWM_PATH="${PWM_DIR}/pwm${PWM_NUM}"
 
-# 80Hz Calculation
-# Period = 1 sec / 80 = 0.0125 sec = 12,500,000 ns
-PERIOD=12500000
-# 50% Duty Cycle = 12,500,000 / 2 = 6,250,000 ns
-DUTY=6250000
+# 60Hz Calculation
+# Period = 1 sec / 60 = 0.0166 sec = 16,666,666 ns
+PERIOD=16666666
+# 10% Duty Cycle = 1,666,666 ns
+DUTY=1666666
 
 echo "Starting PWM on ${PWM_CHIP} Channel ${PWM_NUM}..."
 
@@ -27,11 +27,11 @@ echo 0 > "${PWM_PATH}/enable" 2>/dev/null
 
 # 3. Configure Period (Must be done before Duty Cycle)
 echo $PERIOD > "${PWM_PATH}/period"
-echo "Period set to ${PERIOD} ns (80 Hz)"
+echo "Period set to ${PERIOD} ns"
 
 # 4. Configure Duty Cycle
 echo $DUTY > "${PWM_PATH}/duty_cycle"
-echo "Duty Cycle set to ${DUTY} ns (50%)"
+echo "Duty Cycle set to ${DUTY} ns"
 
 # 5. Enable the Output
 echo 1 > "${PWM_PATH}/enable"
