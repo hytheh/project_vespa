@@ -166,7 +166,7 @@ namespace VESPA
         ioctl(m_fd, VIDIOC_STREAMOFF, &type);
     }
 
-    bool CameraInterface::captureFrame(const std::string &filename, double &timestamp_ms)
+    bool CameraInterface::captureFrame(double &timestamp_ms, uint8_t *&out_buffer, int &out_index)
     {
         struct v4l2_buffer buf = {0};
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -174,22 +174,52 @@ namespace VESPA
 
         fd_set fds;
         struct timeval tv;
-        FD_ZERO(&fds);
-        FD_SET(m_fd, &fds);
-        tv.tv_sec = 0;
-        tv.tv_usec = 200000; // 200 ms timeout
+        int r;
 
-        int r = select(m_fd + 1, &fds, NULL, NULL, &tv);
+        // POSIX fix: Retry select() if interrupted by a SIGCHLD signal from std::system()
+        do
+        {
+            FD_ZERO(&fds);
+            FD_SET(m_fd, &fds);
+
+            // Re-initialize timeout inside the loop because Linux select() modifies tv
+            tv.tv_sec = 0;
+            tv.tv_usec = 200000; // 200 ms timeout
+
+            r = select(m_fd + 1, &fds, NULL, NULL, &tv);
+        } while (r == -1 && errno == EINTR);
 
         if (r <= 0)
+        {
             return false;
+        }
 
         if (ioctl(m_fd, VIDIOC_DQBUF, &buf) < 0)
+        {
             return false;
+        }
 
         timestamp_ms = (buf.timestamp.tv_sec * 1000.0) + (buf.timestamp.tv_usec / 1000.0);
-        ioctl(m_fd, VIDIOC_QBUF, &buf);
+
+        // Expose the zero-copy pointer and index to the caller
+        out_buffer = static_cast<uint8_t *>(m_buffers[buf.index].start);
+        out_index = buf.index;
+
+        // CRITICAL CHANGE: We do NOT requeue the buffer here.
         return true;
+    }
+
+    void CameraInterface::releaseFrame(int index)
+    {
+        struct v4l2_buffer buf = {0};
+        buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+        buf.memory = V4L2_MEMORY_MMAP;
+        buf.index = index;
+
+        if (ioctl(m_fd, VIDIOC_QBUF, &buf) < 0)
+        {
+            std::cerr << "[HAL ERROR] Failed to release buffer " << index << std::endl;
+        }
     }
 
     void CameraInterface::flushQueue()

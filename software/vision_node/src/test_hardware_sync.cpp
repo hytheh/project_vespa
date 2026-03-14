@@ -1,56 +1,89 @@
 /**
  * @file test_hardware_sync.cpp
- * @brief Bootstraps the dual-camera rig and validates stereoscopic synchronization.
- * @author Project V.E.S.P.A. Team
- * @details This executable leverages the HardwareSyncController to safely transition
- * both OV9281 sensors into Slave Mode, arm the 60Hz PWM heartbeat, and mathematically
- * prove that the left and right frames are captured at the exact same microsecond.
- * * @note Known Quirk: When this test exits, the terminal will hang for ~25 seconds.
- * This is the Linux tegra-video driver waiting for an End-Of-Frame (EOF) packet
- * that will never arrive because the PWM trigger has been safely killed.
+ * @brief Upgraded validation for VESPA Stereo Rig.
+ * @details Fixed to handle V4L2 shadow register timing and JSON verification.
  */
 
 #include "HardwareSyncController.h"
 #include <iostream>
 #include <cmath>
+#include <thread>
+#include <chrono>
 
 int main()
 {
-    std::cout << "=== VESPA TEST: STEREO HARDWARE SYNCHRONIZATION ===" << std::endl;
+    std::cout << "=== VESPA TEST: STEREO HARDWARE SYNCHRONIZATION (UPGRADED) ===" << std::endl;
 
-    // 1. Initialize the orchestrator with both V4L2 nodes
-    VESPA::HardwareSyncController stereoRig("/dev/video0", "/dev/video1");
+    // Use the definitive config path we've been tuning
+    std::string configPath = "/home/hytheh/project_vespa/software/vision_node/config/camera_settings.json";
+    VESPA::HardwareSyncController stereoRig("/dev/video0", "/dev/video1", configPath);
 
-    // 2. Execute the atomic boot sequence to clear bus contention
-    // This safely handles the Master-to-Slave mode transition
     if (!stereoRig.initializeRig())
     {
         std::cerr << "[FATAL] Hardware initialization failed." << std::endl;
         return -1;
     }
 
-    // 3. Arm the 60Hz 3.3V PWM heartbeat to wake the sensors
+    // --- THE FIX: Stabilization Window ---
+    // We MUST be streaming before I2C settings will 'stick' in Trigger Mode
+    std::cout << "[TEST] Waking up sensors and waiting for PLL stabilization..." << std::endl;
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    // Arm the PWM Trigger (The 10% duty cycle heartbeat)
     stereoRig.armTrigger();
 
-    double left_ts, right_ts;
-
-    // 4. Capture 50 synchronized frames to verify temporal drift
     std::cout << "[TEST] Pulling 50 synchronized frame pairs..." << std::endl;
+    std::cout << "Index | L-Timestamp | R-Timestamp | Drift (ms) | Status" << std::endl;
+    std::cout << "--------------------------------------------------------" << std::endl;
+
+    int successCount = 0;
     for (int i = 0; i < 50; i++)
     {
-        if (stereoRig.captureSynchronizedPair(left_ts, right_ts))
+        VESPA::StereoPair pair = stereoRig.captureSynchronizedPair();
+
+        if (pair.valid)
         {
-            // Calculate the absolute delta between the hardware timestamps
-            double offset = std::abs(left_ts - right_ts);
-            std::cout << "Pair " << i << " grabbed! Hardware Drift: " << offset << " ms" << std::endl;
+            double offset = std::abs(pair.left_timestamp_ms - pair.right_timestamp_ms);
+
+            // Log the microsecond-level drift
+            std::cout << i << " | "
+                      << pair.left_timestamp_ms << " | "
+                      << pair.right_timestamp_ms << " | "
+                      << offset << " ms | ";
+
+            if (offset < 0.1)
+            {
+                std::cout << "[PERFECT]" << std::endl;
+            }
+            else if (offset < 1.0)
+            {
+                std::cout << "[OK]" << std::endl;
+            }
+            else
+            {
+                std::cout << "[DRIFT ALERT]" << std::endl;
+            }
+
+            successCount++;
+            stereoRig.releaseSynchronizedPair(pair);
         }
         else
         {
-            std::cerr << "[FATAL] Watchdog caught an error, trigger safely disarmed." << std::endl;
-            break;
+            std::cerr << "[ERROR] Failed to capture synced pair at index " << i << std::endl;
         }
     }
 
-    std::cout << "[TEST] Complete. Initiating shutdown (expect a 25s driver hang)..." << std::endl;
+    std::cout << "--------------------------------------------------------" << std::endl;
+    std::cout << "[TEST COMPLETE] Captured " << successCount << "/50 valid pairs." << std::endl;
+
+    if (successCount > 45)
+    {
+        std::cout << "[RESULT] Hardware Sync Verified. Ready for Checkerboard Calibration." << std::endl;
+    }
+    else
+    {
+        std::cout << "[RESULT] High failure rate detected. Check PWM connection." << std::endl;
+    }
+
     return 0;
 }

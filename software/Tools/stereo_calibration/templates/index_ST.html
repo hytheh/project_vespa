@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VESPA Live Stereo Calibration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1e1e1e;
+            color: #fff;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: auto;
+            padding: 20px;
+            background: #2c2c2c;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .video-feed {
+            width: 100%;
+            max-width: 1280px;
+            height: auto;
+            border: 2px solid #555;
+            background-color: #000;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 16px;
+            margin: 0 10px;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #status {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #ffc107;
+            font-size: 18px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>VESPA Live Stereo Hardware Stream</h2>
+        <p>Position the Calibration Board (9x6 inner corners, 15mm) in view of both cameras.</p>
+
+        <img class="video-feed" src="{{ url_for('video_feed') }}" alt="Live Hardware Stream Offline">
+
+        <div class="controls">
+            <button id="captureBtn">📸 Capture Calibration Pair</button>
+            <button id="computeBtn">⚙️ Compute & Save Settings</button>
+        </div>
+        <div id="status">Status: Waiting for stream...</div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        const captureBtn = document.getElementById('captureBtn');
+        const computeBtn = document.getElementById('computeBtn');
+
+        // Let the user know the stream is ready after load
+        setTimeout(() => {
+            statusDiv.innerText = "Status: Ready to Capture";
+            statusDiv.style.color = "#28a745";
+        }, 1500);
+
+        // Capture Button Logic
+        captureBtn.addEventListener('click', () => {
+            statusDiv.innerText = "Status: Analyzing Frame for Checkerboard...";
+            statusDiv.style.color = "#ffc107";
+
+            fetch('/capture', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        statusDiv.innerText = `Status: Captured Pair #${data.count} successfully!`;
+                        statusDiv.style.color = "#28a745";
+                    } else {
+                        statusDiv.innerText = `Status: ${data.message}`;
+                        statusDiv.style.color = "#dc3545";
+                    }
+                })
+                .catch(err => {
+                    statusDiv.innerText = `Error: Could not reach backend.`;
+                    statusDiv.style.color = "#dc3545";
+                });
+        });
+
+        // Compute Button Logic
+        computeBtn.addEventListener('click', () => {
+            statusDiv.innerText = "Status: Crunching Calibration Math (This may take 10+ seconds)...";
+            statusDiv.style.color = "#ffc107";
+
+            fetch('/compute', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === "success") {
+                        statusDiv.innerText = `Success! RMS Error: ${data.rms}. Saved to stereovision_settings.json!`;
+                        statusDiv.style.color = "#28a745";
+                        alert(`Calibration Complete!\nRMS Error: ${data.rms}\nPairs Used: ${data.pairs_used}`);
+                    } else {
+                        statusDiv.innerText = `Error: ${data.message}`;
+                        statusDiv.style.color = "#dc3545";
+                    }
+                });
+        });
+    </script>
+</body>
+
+</html>
