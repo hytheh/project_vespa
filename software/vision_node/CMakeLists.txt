@@ -140,6 +140,32 @@ target_link_libraries(calibration_bridge
     pthread 
 )
 
+# --- Executable: stereo_tracker ---
+add_executable(stereo_tracker 
+    src/stereo_tracker.cpp 
+    src/HardwareSyncController.cpp 
+    src/CameraInterface.cpp
+    src/ArUcoTracker.cpp 
+    src/StereoTriangulator.cpp
+)
+
+target_include_directories(stereo_tracker BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+    /usr/src/jetson_multimedia_api/include
+    ${OpenCV_INCLUDE_DIRS}
+)
+
+target_link_libraries(stereo_tracker 
+    pthread 
+    i2c 
+    nvbufsurface
+    ${OpenCV_LIBS}
+    zmq 
+)
+
+# Enable the ZMQ Live Stream and debug outputs
+target_compile_definitions(stereo_tracker PRIVATE DEBUG_MODE)
 
 
 message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2).")

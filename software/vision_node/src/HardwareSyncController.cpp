@@ -32,7 +32,6 @@ namespace VESPA
 
     bool HardwareSyncController::acquireHardwareLock()
     {
-        // FIX: Added O_CLOEXEC to prevent the FD from leaking to v4l2-ctl child processes
         m_lockFd = open("/tmp/vespa_hardware.lock", O_CREAT | O_RDWR | O_CLOEXEC, 0666);
         if (m_lockFd < 0)
         {
@@ -40,7 +39,6 @@ namespace VESPA
             return false;
         }
 
-        // Attempt an exclusive, non-blocking lock
         if (flock(m_lockFd, LOCK_EX | LOCK_NB) < 0)
         {
             std::cerr << "\n\033[1;31m[FATAL BUS CONTENTION HAZARD]\033[0m" << std::endl;
@@ -59,41 +57,41 @@ namespace VESPA
     {
         std::cout << "[SYNC CONTROLLER] Initializing Stereo Rig..." << std::endl;
 
-        // 1. MANDATORY SAFETY GATE: Acquire OS lock before touching ANY hardware
         if (!acquireHardwareLock())
         {
             return false;
         }
 
-        // 2. NOW it is safe to clamp the PWM pin (Moved from constructor)
         std::system("echo 0 > /sys/class/pwm/pwmchip3/export 2>/dev/null");
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-        // FIX 1: Call disarmTrigger() before setting the period to prevent sysfs rejection
         disarmTrigger();
         std::system("echo 16666666 > /sys/class/pwm/pwmchip3/pwm0/period 2>/dev/null");
 
-        // 3. Initialize V4L2 Streams
         if (!m_leftCam->init() || !m_rightCam->init())
         {
             std::cerr << "[FATAL] Failed to open video nodes." << std::endl;
             return false;
         }
 
-        // Start the hardware streams FIRST to wake up the PLL clocks
+        // 1. Start the hardware streams FIRST to wake up the PLL clocks
         m_leftCam->startStream();
         m_rightCam->startStream();
 
-        // THE FIX: Let the hardware stabilize before sending I2C commands
         std::cout << "[SYNC CONTROLLER] Waiting 500ms for sensor clocks to stabilize..." << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-        // Now load and apply the JSON settings to the awake, active registers
+        // 2. Load the JSON configurations into memory
         std::cout << "[SYNC CONTROLLER] Loading optical settings from: " << m_configPath << std::endl;
         m_leftCam->loadSettings(m_configPath, "camera0");
         m_rightCam->loadSettings(m_configPath, "camera1");
 
-        // 4. Force Slave Mode (CRITICAL: Overrides Python tool's Master Mode state)
+        // 3. APPLY SETTINGS (Bypassing V4L2 Cache via Automated Jiggle)
+        std::cout << "[SYNC CONTROLLER] Applying optical settings to I2C subdevices..." << std::endl;
+        m_leftCam->applySettings();
+        m_rightCam->applySettings();
+
+        // 4. Force Slave Mode
         std::cout << "[SYNC CONTROLLER] Forcing Left Camera to Slave Mode..." << std::endl;
         if (!forceSlaveMode(m_leftDevName))
             return false;
@@ -102,7 +100,6 @@ namespace VESPA
         if (!forceSlaveMode(m_rightDevName))
             return false;
 
-        // FIX 2: Sleep for 50ms to allow in-flight Master Mode frames to finish writing to DMA RAM
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
         m_leftCam->flushQueue();
@@ -149,34 +146,28 @@ namespace VESPA
         bool left_ok = m_leftCam->captureFrame(pair.left_timestamp_ms, pair.left_data, pair.left_index);
         bool right_ok = m_rightCam->captureFrame(pair.right_timestamp_ms, pair.right_data, pair.right_index);
 
-        // Keep pulling frames from the V4L2 queues until their timestamps match perfectly
         while (left_ok && right_ok)
         {
             double diff = pair.left_timestamp_ms - pair.right_timestamp_ms;
 
-            // If timestamps are within 5 milliseconds of each other, they are a perfect match
             if (std::abs(diff) <= 5.0)
             {
                 pair.valid = true;
                 return pair;
             }
 
-            // Desync detected! Drop the older frame and pull a fresh one from that specific camera
             if (diff < 0)
             {
-                // Left frame is older, throw it away
                 m_leftCam->releaseFrame(pair.left_index);
                 left_ok = m_leftCam->captureFrame(pair.left_timestamp_ms, pair.left_data, pair.left_index);
             }
             else
             {
-                // Right frame is older, throw it away
                 m_rightCam->releaseFrame(pair.right_index);
                 right_ok = m_rightCam->captureFrame(pair.right_timestamp_ms, pair.right_data, pair.right_index);
             }
         }
 
-        // If we break the loop, a camera failed to yield a frame
         if (left_ok)
             m_leftCam->releaseFrame(pair.left_index);
         if (right_ok)

@@ -2,6 +2,7 @@
 #include <cmath>
 #include <limits>
 #include <algorithm>
+#include <iostream>
 
 StereoTriangulator::StereoTriangulator(const TriangulatorConfig &config)
     : config_(config) {}
@@ -16,7 +17,7 @@ std::vector<Target3D> StereoTriangulator::triangulate(
     // Track which right targets have been assigned
     std::vector<bool> right_assigned(right_targets.size(), false);
 
-    // Greedy Association
+    // Greedy Association using Epipolar geometry
     for (size_t l = 0; l < left_targets.size(); ++l)
     {
         int best_r_idx = -1;
@@ -35,7 +36,6 @@ std::vector<Target3D> StereoTriangulator::triangulate(
                 disparity > config_.min_disparity_px &&
                 y_diff < min_y_diff)
             {
-
                 min_y_diff = y_diff;
                 best_r_idx = static_cast<int>(r);
             }
@@ -52,6 +52,8 @@ std::vector<Target3D> StereoTriangulator::triangulate(
             pt.Z = (config_.focal_length_px * config_.baseline_mm) / disparity;
             pt.X = ((left_targets[l].cx - config_.center_x_px) * pt.Z) / config_.focal_length_px;
             pt.Y = ((left_targets[l].cy - config_.center_y_px) * pt.Z) / config_.focal_length_px;
+            pt.left_cx = left_targets[l].cx;
+            pt.left_cy = left_targets[l].cy;
 
             points_3d.push_back(pt);
 
