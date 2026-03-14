@@ -76,27 +76,6 @@ target_link_libraries(test_camera_hal
     ${OpenCV_LIBS}
 )
 
-# --- Executable: test_stereo_pipeline ---
-# Compiles the Phase 3 synthetic test harness
-add_executable(test_stereo_pipeline 
-    src/test_stereo_pipeline.cpp 
-    src/ArUcoTracker.cpp 
-    src/StereoTriangulator.cpp
-)
-
-target_include_directories(test_stereo_pipeline BEFORE PRIVATE
-    ${CMAKE_SOURCE_DIR}/src
-    ${CMAKE_SOURCE_DIR}/include
-)
-
-# Link OpenCV for ArUco and matrix operations
-target_link_libraries(test_stereo_pipeline 
-    ${OpenCV_LIBS}
-)
-
-# Enable console debug outputs for our Tracker and Triangulator
-target_compile_definitions(test_stereo_pipeline PRIVATE DEBUG_MODE)
-
 # --- Executable: test_hardware_sync ---
 # Bootstraps the dual-camera rig and tests the 60Hz PWM heartbeat
 add_executable(test_hardware_sync 
@@ -118,6 +97,47 @@ target_link_libraries(test_hardware_sync
     i2c 
     nvbufsurface
     ${OpenCV_LIBS}
+)
+
+# --- Executable: test_stereo_pipeline ---
+# Compiles the Phase 3 synthetic test harness
+add_executable(test_stereo_pipeline 
+    src/test_stereo_pipeline.cpp 
+    src/ArUcoTracker.cpp 
+    src/StereoTriangulator.cpp
+)
+
+target_include_directories(test_stereo_pipeline BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+)
+
+# Link OpenCV for ArUco and matrix operations
+target_link_libraries(test_stereo_pipeline 
+    ${OpenCV_LIBS}
+)
+
+# Enable console debug outputs for our Tracker and Triangulator
+target_compile_definitions(test_stereo_pipeline PRIVATE DEBUG_MODE)
+
+# --- Executable: calibration bridge ---
+#
+add_executable(calibration_bridge 
+    src/calibration_bridge.cpp 
+    src/HardwareSyncController.cpp 
+    src/CameraInterface.cpp
+)
+
+target_include_directories(calibration_bridge BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+    /usr/src/jetson_multimedia_api/include
+)
+
+target_link_libraries(calibration_bridge 
+    ${OpenCV_LIBS}
+    zmq
+    pthread 
 )
 
 

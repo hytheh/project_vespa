@@ -78,12 +78,20 @@ namespace VESPA
         void stopStream();
 
         /**
-         * @brief Blocks via select() until a frame is ready or a 200ms timeout occurs.
-         * @param filename (Optional) Path to dump the raw PGM file to disk.
+         * @brief Blocks until a frame is ready, dequeues it, and yields the memory pointer.
+         * @warning The caller MUST call releaseFrame() with the yielded index when finished.
          * @param timestamp_ms Reference to store the V4L2 hardware timestamp.
+         * @param out_buffer Reference to a pointer that will be set to the mapped memory.
+         * @param out_index Reference to store the buffer index (needed for release).
          * @return true if a frame was successfully dequeued, false on watchdog timeout.
          */
-        bool captureFrame(const std::string &filename, double &timestamp_ms);
+        bool captureFrame(double &timestamp_ms, uint8_t *&out_buffer, int &out_index);
+
+        /**
+         * @brief Returns a processed buffer back to the kernel queue.
+         * @param index The buffer index previously yielded by captureFrame().
+         */
+        void releaseFrame(int index);
 
         /**
          * @brief Non-blocking loop that pulls all stale frames currently in the queue.

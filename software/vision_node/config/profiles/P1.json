@@ -2,8 +2,8 @@
     "camera0": {
         "exposure": 276,
         "analogue_gain": 260,
-        "horizontal_flip": 0,
-        "vertical_flip": 0
+        "horizontal_flip": 1,
+        "vertical_flip": 1
     },
     "camera1": {
         "exposure": 276,
