@@ -18,13 +18,14 @@
 
 #define V4L2_CID_ARDUCAM_TRIGGER_MODE 0x00981901
 #define V4L2_CID_ARDUCAM_EXPOSURE 0x00980911
+#define V4L2_CID_HFLIP 0x00980914
+#define V4L2_CID_VFLIP 0x00980915
 
 namespace VESPA
 {
     CameraInterface::CameraInterface(const std::string &devicePath)
         : m_devicePath(devicePath), m_fd(-1)
     {
-        // PWM control removed. Orchestrator handles it now.
     }
 
     CameraInterface::~CameraInterface()
@@ -140,6 +141,22 @@ namespace VESPA
         }
     }
 
+    void CameraInterface::applySettings()
+    {
+        // 1. THE AUTOMATED JIGGLE: Force Tegra V4L2 cache to synchronize with physical hardware
+        setControl(V4L2_CID_HFLIP, 1, "H-Flip Cache Sync");
+        setControl(V4L2_CID_VFLIP, 1, "V-Flip Cache Sync");
+
+        // Give the I2C bus 150ms to digest the dummy commands
+        std::this_thread::sleep_for(std::chrono::milliseconds(150));
+
+        // 2. APPLY TARGET CONFIG: Driver will now recognize state transitions to '0'
+        setControl(V4L2_CID_HFLIP, m_settings.h_flip, "Target H-Flip");
+        setControl(V4L2_CID_VFLIP, m_settings.v_flip, "Target V-Flip");
+        setControl(V4L2_CID_ARDUCAM_EXPOSURE, m_settings.exposure, "Exposure");
+        setControl(0x009e0903, m_settings.gain, "Analogue Gain");
+    }
+
     void CameraInterface::startStream()
     {
         for (int i = 0; i < BUFFER_COUNT; ++i)
@@ -153,9 +170,6 @@ namespace VESPA
 
         int type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         ioctl(m_fd, VIDIOC_STREAMON, &type);
-
-        setControl(V4L2_CID_ARDUCAM_EXPOSURE, m_settings.exposure, "Exposure");
-        setControl(0x009e0903, m_settings.gain, "Analogue Gain");
     }
 
     void CameraInterface::stopStream()
@@ -176,13 +190,11 @@ namespace VESPA
         struct timeval tv;
         int r;
 
-        // POSIX fix: Retry select() if interrupted by a SIGCHLD signal from std::system()
         do
         {
             FD_ZERO(&fds);
             FD_SET(m_fd, &fds);
 
-            // Re-initialize timeout inside the loop because Linux select() modifies tv
             tv.tv_sec = 0;
             tv.tv_usec = 200000; // 200 ms timeout
 
@@ -201,11 +213,9 @@ namespace VESPA
 
         timestamp_ms = (buf.timestamp.tv_sec * 1000.0) + (buf.timestamp.tv_usec / 1000.0);
 
-        // Expose the zero-copy pointer and index to the caller
         out_buffer = static_cast<uint8_t *>(m_buffers[buf.index].start);
         out_index = buf.index;
 
-        // CRITICAL CHANGE: We do NOT requeue the buffer here.
         return true;
     }
 
@@ -225,21 +235,20 @@ namespace VESPA
     void CameraInterface::flushQueue()
     {
         int flags = fcntl(m_fd, F_GETFL, 0);
-        fcntl(m_fd, F_SETFL, flags | O_NONBLOCK); // Set to non-blocking
+        fcntl(m_fd, F_SETFL, flags | O_NONBLOCK);
 
         struct v4l2_buffer buf = {0};
         buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
         buf.memory = V4L2_MEMORY_MMAP;
 
         int flushed = 0;
-        // Keep pulling until the queue is empty
         while (ioctl(m_fd, VIDIOC_DQBUF, &buf) == 0)
         {
             ioctl(m_fd, VIDIOC_QBUF, &buf);
             flushed++;
         }
 
-        fcntl(m_fd, F_SETFL, flags); // Restore blocking mode
+        fcntl(m_fd, F_SETFL, flags);
         std::cout << "[HAL] Flushed " << flushed << " stale frames from " << m_devicePath << std::endl;
     }
 }

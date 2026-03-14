@@ -67,7 +67,6 @@ namespace VESPA
 
         /**
          * @brief Queues buffers to the kernel and starts the capture stream.
-         * @details Applies the CameraSettings immediately after stream initiation.
          */
         void startStream();
 
@@ -104,6 +103,12 @@ namespace VESPA
          * @param cameraKey The key within the JSON corresponding to this sensor (e.g., "camera0").
          */
         void loadSettings(const std::string &configPath, const std::string &cameraKey);
+
+        /**
+         * @brief Pushes the loaded settings to the physical hardware.
+         * @details Implements the "Automated Jiggle" to bypass Tegra V4L2 caching bugs.
+         */
+        void applySettings();
 
     private:
         std::string m_devicePath;            ///< The targeted V4L2 node

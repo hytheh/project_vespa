@@ -17,7 +17,8 @@ class ArUcoTracker
 public:
     ArUcoTracker();
 
-    // Accepts raw 8-bit grayscale buffer. Width and height are expected to be 1280x800.
+    // Accepts raw 8-bit grayscale buffer. Width and height are expected to be physically 1280x800.
+    // Returns upright (800x1280) coordinates via internal kinematic rotation.
     std::vector<Target2D> detect(const uint8_t *buffer, int width, int height) const;
 
 private:
