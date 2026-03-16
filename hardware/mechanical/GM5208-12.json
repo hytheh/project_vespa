@@ -1,0 +1,22 @@
+{
+    "BEmfConstant": 32.957950592041016,
+    "compatibility": [
+        "FOC",
+        "sixStep"
+    ],
+    "description": "14M7P PMSM Gimbal Motor",
+    "friction": 10.29,
+    "hardwareFamily": "MOTOR",
+    "id": "GM5208-12",
+    "inertia": 8.3,
+    "label": "GM5208-12",
+    "ls": 4.49,
+    "magneticStructure": {
+        "type": "SM-PMSM"
+    },
+    "maxRatedSpeed": 504,
+    "nominalCurrent": 1.5,
+    "nominalDCVoltage": 23.57440185546875,
+    "polePairs": 7,
+    "rs": 7.475798606872559
+}
