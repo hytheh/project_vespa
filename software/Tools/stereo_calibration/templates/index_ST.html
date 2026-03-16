@@ -136,9 +136,9 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.status === "success") {
-                        statusDiv.innerText = `Success! RMS: ${data.rms} | Baseline: ${data.baseline}mm. Saved to JSON.`;
+                        statusDiv.innerText = `Success! RMS: ${data.rms} | Baseline: ${data.baseline}mm | Focal: ${data.focal_length_mm}mm. Saved.`;
                         statusDiv.style.color = "#28a745";
-                        alert(`Calibration Complete!\nRMS Error: ${data.rms}\nCalculated Baseline: ${data.baseline} mm\nPairs Used: ${data.pairs_used}`);
+                        alert(`Calibration Complete!\nRMS Error: ${data.rms}\nCalculated Baseline: ${data.baseline} mm\nCalculated Focal Length: ${data.focal_length_mm} mm\nPairs Used: ${data.pairs_used}`);
                     } else {
                         statusDiv.innerText = `Error: ${data.message}`;
                         statusDiv.style.color = "#dc3545";
