@@ -167,5 +167,31 @@ target_link_libraries(stereo_tracker
 # Enable the ZMQ Live Stream and debug outputs
 target_compile_definitions(stereo_tracker PRIVATE DEBUG_MODE)
 
+# --- Executable: sparse_tracker ---
+add_executable(sparse_tracker src/sparse_tracker.cpp src/HardwareSyncController.cpp src/CameraInterface.cpp)
+
+target_include_directories(sparse_tracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+target_link_libraries(sparse_tracker ${OpenCV_LIBS})
+
+
+
+# --- Executable: turret_tracker (MVP Predictive Aiming + CAN) ---
+add_executable(turret_tracker 
+    src/turret_tracker.cpp 
+    src/PredictiveTurretSight.cpp 
+    src/vision_can.cpp 
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common/can_utils.c
+)
+
+# Tell the compiler to look in the local folders AND the shared common folder
+target_include_directories(turret_tracker PRIVATE 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src 
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/../common
+)
+
+target_link_libraries(turret_tracker ${OpenCV_LIBS})
+
 
 message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2).")

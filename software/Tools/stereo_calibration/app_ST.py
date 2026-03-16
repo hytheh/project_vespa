@@ -59,6 +59,8 @@ def zmq_receiver_thread():
         except zmq.ZMQError:
             break # Catch if the socket closes while we are waiting
 
+threading.Thread(target=zmq_receiver_thread, daemon=True).start()
+
 # --- GRACEFUL SHUTDOWN HANDLER ---
 def cleanup_network():
     """At-Exit hook to safely release ZMQ sockets."""
@@ -147,8 +149,8 @@ def capture_pair():
 
     if ret_l and ret_r:
         criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-        corners_l = cv2.cornerSubPix(img_left, corners_l, (11, 11), (-1, -1), criteria)
-        corners_r = cv2.cornerSubPix(img_right, corners_r, (11, 11), (-1, -1), criteria)
+        corners_l = cv2.cornerSubPix(img_left, corners_l, (5, 5), (-1, -1), criteria)
+        corners_r = cv2.cornerSubPix(img_right, corners_r, (5, 5), (-1, -1), criteria)
 
         objpoints.append(objp)
         imgpoints_left.append(corners_l)
@@ -197,11 +199,24 @@ def compute_calibration():
     # Extract the horizontal physical distance between the cameras in mm
     # T is a 3x1 vector. T[0][0] is the X-axis translation.
     baseline_mm = abs(T[0][0]) 
+    
+    # Extract Focal Length (Fx) and convert from pixels to mm (OV9281 = 0.003mm pixel size)
+    focal_length_px = mtx_l[0][0]
+    focal_length_mm = focal_length_px * 0.003
 
     return jsonify({
         "status": "success", 
         "rms": round(ret_stereo, 3), 
-        "baseline": round(baseline_mm, 2), # <-- Send it to the frontend
+        "baseline": round(baseline_mm, 2), 
+        "focal_length_mm": round(focal_length_mm, 2), # <-- Pass it as mm
+        "pairs_used": len(objpoints)
+    })
+
+    return jsonify({
+        "status": "success", 
+        "rms": round(ret_stereo, 3), 
+        "baseline": round(baseline_mm, 2), 
+        "focal_length_px": round(focal_length_px, 2), # <-- Pass it to the frontend
         "pairs_used": len(objpoints)
     })
 
