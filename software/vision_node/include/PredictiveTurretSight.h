@@ -1,6 +1,6 @@
 /**
  * @file PredictiveTurretSight.h
- * @brief Kalman-filtered predictive aiming system for tracking and intercepting moving targets.
+ * @brief 3D Cartesian Kalman-filtered predictive aiming system.
  */
 #pragma once
 
@@ -9,8 +9,13 @@
 
 struct AimCommand
 {
-    double pan_angle;
-    double tilt_angle;
+    double pan_angle;  // Command for Turret
+    double tilt_angle; // Command for Turret
+    double pred_X;     // Predicted 3D X (mm)
+    double pred_Y;     // Predicted 3D Y (mm)
+    double pred_Z;     // Predicted 3D Z (mm)
+    double pred_cx;    // Predicted 2D Pixel X (For UI)
+    double pred_cy;    // Predicted 2D Pixel Y (For UI)
 };
 
 class PredictiveTurretSight
@@ -22,28 +27,18 @@ private:
 
     // Camera Intrinsic Parameters
     double Fx, Fy, Cx, Cy;
-
-    // System Latency (Seconds) for Lead Calculation
     double system_latency_sec;
-
     long last_timestamp_ms;
 
 public:
-    /**
-     * @brief Initializes the predictive tracker with camera parameters and expected latency.
-     */
     PredictiveTurretSight(double fx, double fy, double cx, double cy, double latency);
 
     /**
-     * @brief Feeds a new detection into the Kalman filter and predicts the future intercept angle.
-     * @param target_u X pixel coordinate of target
-     * @param target_v Y pixel coordinate of target
-     * @param current_turret_pan Current physical pan angle of the turret (in Radians)
-     * @param current_turret_tilt Current physical tilt angle of the turret (in Radians)
+     * @brief Feeds a 3D measurement into the Kalman filter and predicts the future state.
+     * @param measured_X Current X from triangulator (mm)
+     * @param measured_Y Current Y from triangulator (mm)
+     * @param measured_Z Current Z from triangulator (mm)
      * @param timestamp_ms Current system time in milliseconds
-     * @return AimCommand containing the predicted Pan and Tilt angles to command the servos
      */
-    AimCommand updateAndPredict(double target_u, double target_v,
-                                double current_turret_pan, double current_turret_tilt,
-                                long timestamp_ms);
+    AimCommand updateAndPredict(double measured_X, double measured_Y, double measured_Z, long timestamp_ms);
 };
