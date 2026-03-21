@@ -4,7 +4,8 @@
 # VSCode - Share configuration, ignore local state
 .vscode/.browse.c_cpp.db*
 .vscode/ipch/
-.vscode/c_cpp_properties.json # Often local-path dependent, but can be shared if paths are relative
+.vscode/settings.json
+.vscode/c_cpp_properties.json
 # We KEEP launch.json and tasks.json to share build workflows
 
 # C++ / CMake (Jetson)

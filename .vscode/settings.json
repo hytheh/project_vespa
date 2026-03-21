@@ -1,5 +1,5 @@
 {
-    "cmake.sourceDirectory": "C:/Users/antod/Documents/Project/project_vespa/software/motion_node",
+    "cmake.sourceDirectory": "/home/hytheh/project_vespa/software/vision_node",
     "cmake.cmakePath": "/usr/bin/cmake",
     "files.associations": {
         "*.h": "cpp",
