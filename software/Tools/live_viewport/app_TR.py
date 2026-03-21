@@ -18,6 +18,7 @@ app = Flask(__name__)
 context = zmq.Context()
 subscriber = context.socket(zmq.SUB)
 # subscriber.setsockopt(zmq.CONFLATE, 1) # Drop old frames to ensure 0 latency
+subscriber.setsockopt(zmq.LINGER, 0) # prevent infinite hang on exit
 subscriber.connect("tcp://localhost:5556") # Connects to the tracker's debug port
 subscriber.setsockopt(zmq.SUBSCRIBE, b"")
 
@@ -73,51 +74,71 @@ def generate_stream():
             targets = latest_targets
         
         if frame_data is not None:
-            # 1. Convert 2MB raw bytes
+            # --- LAYER 1: Raw Video ( rotated & colored ) ---
             nparr = np.frombuffer(frame_data, dtype=np.uint8)
-            
-            # 2. Split into Left and Right
             img_left_raw = nparr[:1280*800].reshape((800, 1280))
             img_right_raw = nparr[1280*800:].reshape((800, 1280))
             
-            # 3. Rotate kinematically to upright (800x1280)
+            # Portrait rotation
             img_left = cv2.rotate(img_left_raw, cv2.ROTATE_90_COUNTERCLOCKWISE)
             img_right = cv2.rotate(img_right_raw, cv2.ROTATE_90_COUNTERCLOCKWISE)
             
-            # 4. Convert to Color 
-            img_left_color = cv2.cvtColor(img_left, cv2.COLOR_GRAY2BGR)
-            img_right_color = cv2.cvtColor(img_right, cv2.COLOR_GRAY2BGR)
-            
-            # 5. Glue them Side-By-Side FIRST (Result is 1600x1280)
-            combined_img = cv2.hconcat([img_left_color, img_right_color])
+            # Combine Side-by-Side FIRST (1600x1280)
+            combined_img = cv2.hconcat([cv2.cvtColor(img_left, cv2.COLOR_GRAY2BGR), 
+                                        cv2.cvtColor(img_right, cv2.COLOR_GRAY2BGR)])
 
-            # 6. Draw Targets on the combined image (Prevents clipping boundary)
+            # Helper for high-contrast outlined text/shapes
+            def draw_outlined_text(img, text, pos, font_scale=0.8, thickness=2):
+                # Draw thick black contour underneath
+                cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, font_scale, (0,0,0), thickness+3, cv2.LINE_AA)
+                # Draw white fill on top
+                cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255,255,255), thickness, cv2.LINE_AA)
+
+            def draw_outlined_marker(img, pos, marker_type, size, thickness, color_bgr):
+                # Draw black contour underneath (thicker)
+                cv2.drawMarker(img, pos, (0,0,0), marker_type, size, thickness+4, cv2.LINE_AA)
+                # Draw main color on top
+                cv2.drawMarker(img, pos, color_bgr, marker_type, size, thickness, cv2.LINE_AA)
+
+
+            # --- DRAW OVERLAYS ---
             for t in targets:
                 cx, cy = int(t['cx']), int(t['cy'])
-                
-                # Draw the Crosshair
-                cv2.drawMarker(combined_img, (cx, cy), (0, 255, 0), cv2.MARKER_CROSS, 40, 3)
-                cv2.circle(combined_img, (cx, cy), 15, (0, 0, 255), 2)
-                
-                # Split the coordinates into a vertical list to utilize the vertical space
-                lines = [
-                    f"X: {int(t['x'])} mm",
-                    f"Y: {int(t['y'])} mm",
-                    f"Z: {int(t['z'])} mm"
-                ]
-                
-                # Draw the stacked text 
-                y_offset = cy - 40 # Start slightly above the crosshair
-                for line in lines:
-                    # Drawing on combined_img allows it to safely bleed into the right stream
-                    cv2.putText(combined_img, line, (cx + 25, y_offset), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 255), 2)
-                    y_offset += 30 # Drop down for the next line
 
-            # 7. Encode to Web Stream
+                # --- LAYER 2: The 'Old' Overlay (Current Position) ---
+                # Changed to Black Contoured White for daylight contrast
+                
+                # Outlined Target Reticle (Black contoured White)
+                cv2.circle(combined_img, (cx, cy), 15, (0,0,0), 6, cv2.LINE_AA)     # Black contour
+                cv2.circle(combined_img, (cx, cy), 15, (255,255,255), 2, cv2.LINE_AA) # White fill
+                
+                # Stacked Outlined Text 
+                y_offset = cy - 40
+                lines = [f"X: {int(t['x'])}mm", f"Y: {int(t['y'])}mm", f"Z: {int(t['z'])}mm"]
+                for line in lines:
+                    draw_outlined_text(combined_img, line, (cx + 25, y_offset))
+                    y_offset += 30
+
+                # --- LAYER 3: The 'New' Overlay (Predicted Lead Sight) ---
+                # Topmost layer, Cyan, Crosshair style, no text printed.
+                
+                if 'pred_cx' in t and 'pred_cy' in t:
+                    pcx, pcy = int(t['pred_cx']), int(t['pred_cy'])
+                    
+                    # Crash protection
+                    pcx = max(-5000, min(5000, pcx))
+                    pcy = max(-5000, min(5000, pcy))
+
+                    # Cyan (Blue=255, Green=255, Red=0) Outlined for contrast
+                    draw_outlined_marker(combined_img, (pcx, pcy), cv2.MARKER_CROSS, 40, 3, (255, 255, 0))
+                    
+                    # Add subtle vector line connecting the two (Contoured Black)
+                    cv2.line(combined_img, (cx, cy), (pcx, pcy), (0,0,0), 5, cv2.LINE_AA)
+                    cv2.line(combined_img, (cx, cy), (pcx, pcy), (255, 255, 0), 2, cv2.LINE_AA) # Cyan vector
+
+            # --- LAYER 4: Encode to Web Stream ---
             _, buffer = cv2.imencode('.jpg', combined_img, [cv2.IMWRITE_JPEG_QUALITY, 80])
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
+            yield (b'--frame\r\nContent-Type: image/jpeg\r\n\r\n' + buffer.tobytes() + b'\r\n')
         else:
             time.sleep(0.01)
 

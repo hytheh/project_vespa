@@ -2,68 +2,89 @@
 #include <cmath>
 
 PredictiveTurretSight::PredictiveTurretSight(double fx, double fy, double cx, double cy, double latency)
-    : Fx(fx), Fy(fy), Cx(cx), Cy(cy), system_latency_sec(latency), stateSize(4), measSize(2), last_timestamp_ms(0)
+    : Fx(fx), Fy(fy), Cx(cx), Cy(cy), system_latency_sec(latency), stateSize(6), measSize(3), last_timestamp_ms(0)
 {
     kf.init(stateSize, measSize, 0, CV_32F);
 
-    // Transition Matrix (F): Constant Velocity Model
     cv::setIdentity(kf.transitionMatrix);
 
-    // Measurement Matrix (H): We only measure Pan and Tilt directly
     kf.measurementMatrix = cv::Mat::zeros(measSize, stateSize, CV_32F);
     kf.measurementMatrix.at<float>(0, 0) = 1.0f;
     kf.measurementMatrix.at<float>(1, 2) = 1.0f;
+    kf.measurementMatrix.at<float>(2, 4) = 1.0f;
 
-    // Process Noise (Q): How much we trust the math vs target's erratic behavior
-    cv::setIdentity(kf.processNoiseCov, cv::Scalar::all(1e-4));
+    // --- THE HIGH-AGILITY TUNING ---
+    // Trust the camera measurements deeply (Low Measurement Noise)
+    cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(1e-3));
 
-    // Measurement Noise (R): How noisy your pixel detections are
-    cv::setIdentity(kf.measurementNoiseCov, cv::Scalar::all(1e-2));
+    // Process Noise: Low noise for position, HIGH noise for velocity
+    // This allows the filter to instantly adapt to erratic hand movements
+    kf.processNoiseCov = cv::Mat::zeros(6, 6, CV_32F);
+    kf.processNoiseCov.at<float>(0, 0) = 1e-3f; // X
+    kf.processNoiseCov.at<float>(1, 1) = 5.0f;  // Vx (Highly adaptable)
+    kf.processNoiseCov.at<float>(2, 2) = 1e-3f; // Y
+    kf.processNoiseCov.at<float>(3, 3) = 5.0f;  // Vy (Highly adaptable)
+    kf.processNoiseCov.at<float>(4, 4) = 1e-3f; // Z
+    kf.processNoiseCov.at<float>(5, 5) = 5.0f;  // Vz (Highly adaptable)
 
-    // Error Covariance (P)
     cv::setIdentity(kf.errorCovPost, cv::Scalar::all(1));
 }
 
-AimCommand PredictiveTurretSight::updateAndPredict(double target_u, double target_v,
-                                                   double current_turret_pan, double current_turret_tilt,
-                                                   long timestamp_ms)
+AimCommand PredictiveTurretSight::updateAndPredict(double measured_X, double measured_Y, double measured_Z, long timestamp_ms)
 {
-    // 1. Calculate Delta Time (dt) in seconds
     double dt = (last_timestamp_ms == 0) ? 0.016 : (timestamp_ms - last_timestamp_ms) / 1000.0;
+
+    // --- DROPOUT RESET ---
+    // If the target is lost for more than half a second, reset the filter state
+    // so we don't get a massive, incorrect velocity spike when it reappears.
+    if (dt > 0.5)
+    {
+        kf.statePost.at<float>(0) = measured_X;
+        kf.statePost.at<float>(1) = 0.0f;
+        kf.statePost.at<float>(2) = measured_Y;
+        kf.statePost.at<float>(3) = 0.0f;
+        kf.statePost.at<float>(4) = measured_Z;
+        kf.statePost.at<float>(5) = 0.0f;
+        dt = 0.016;
+    }
     last_timestamp_ms = timestamp_ms;
 
-    // Update Transition Matrix with dynamic dt
     kf.transitionMatrix.at<float>(0, 1) = dt;
     kf.transitionMatrix.at<float>(2, 3) = dt;
+    kf.transitionMatrix.at<float>(4, 5) = dt;
 
-    // 2. Kalman PREDICT (Where we think it is right now based on last velocity)
     cv::Mat prediction = kf.predict();
 
-    // 3. Convert Pixel to Camera Angle (Using standard pinhole model in Radians)
-    double cam_pan_angle = atan((target_u - Cx) / Fx);
-    double cam_tilt_angle = atan((target_v - Cy) / Fy);
-
-    // 4. Calculate Global Target Angle
-    double measured_global_pan = current_turret_pan + cam_pan_angle;
-    double measured_global_tilt = current_turret_tilt + cam_tilt_angle;
-
-    // 5. Kalman CORRECT (Feed the measurement in)
-    cv::Mat measurement = cv::Mat::zeros(measSize, 1, CV_32F);
-    measurement.at<float>(0) = measured_global_pan;
-    measurement.at<float>(1) = measured_global_tilt;
-
+    cv::Mat measurement = (cv::Mat_<float>(3, 1) << measured_X, measured_Y, measured_Z);
     cv::Mat estimated = kf.correct(measurement);
 
-    // Extract smoothed state
-    double est_pan = estimated.at<float>(0);
-    double est_pan_vel = estimated.at<float>(1);
-    double est_tilt = estimated.at<float>(2);
-    double est_tilt_vel = estimated.at<float>(3);
+    double est_X = estimated.at<float>(0);
+    double est_Vx = estimated.at<float>(1);
+    double est_Y = estimated.at<float>(2);
+    double est_Vy = estimated.at<float>(3);
+    double est_Z = estimated.at<float>(4);
+    double est_Vz = estimated.at<float>(5);
 
-    // 6. CALCULATE THE LEAD (Predict future position based on system latency)
     AimCommand cmd;
-    cmd.pan_angle = est_pan + (est_pan_vel * system_latency_sec);
-    cmd.tilt_angle = est_tilt + (est_tilt_vel * system_latency_sec);
+    cmd.pred_X = est_X + (est_Vx * system_latency_sec);
+    cmd.pred_Y = est_Y + (est_Vy * system_latency_sec);
+    cmd.pred_Z = est_Z + (est_Vz * system_latency_sec);
+
+    if (cmd.pred_Z > 1.0)
+    {
+        cmd.pred_cx = (cmd.pred_X * Fx / cmd.pred_Z) + Cx;
+        cmd.pred_cy = (cmd.pred_Y * Fy / cmd.pred_Z) + Cy;
+
+        cmd.pan_angle = atan(cmd.pred_X / cmd.pred_Z);
+        cmd.tilt_angle = atan(cmd.pred_Y / cmd.pred_Z);
+    }
+    else
+    {
+        cmd.pred_cx = Cx;
+        cmd.pred_cy = Cy;
+        cmd.pan_angle = 0.0;
+        cmd.tilt_angle = 0.0;
+    }
 
     return cmd;
 }
