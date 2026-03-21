@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 VESPA CAN Protocol - Message Manifest
 Version: 1.3
 Baudrate: TBD (Target: 500kbps or 1Mbps)
@@ -13,4 +14,21 @@ ID      | Name         | Publisher        | Subscriber(s)    | Size   | Descript
 0x110   | HB_MOTION    | motion_node      | coordinator_node | 1 Byte | Status: 0=OK, 1=WARN, 2=ERR.
 0x120   | HB_COORD     | coordinator_node | All Nodes        | 1 Byte | Status: 0=OK, 1=WARN, 2=ERR.
 0x200   | DBG_MOTION   | motion_node      | vision_node      | 8 Bytes| Reserved for FOC states/currents (Debug Mode only).
+=======
+VESPA CAN Protocol - Message Manifest
+Version: 1.3
+Baudrate: TBD (Target: 500kbps or 1Mbps)
+Standard: Classic CAN 2.0B (11-bit ID, Max 8-byte Payload)
+
+ID      | Name         | Publisher        | Subscriber(s)    | Size   | Description
+---------------------------------------------------------------------------------------------------
+0x010   | FIRE_CMD     | vision_node      | coordinator_node | 1 Byte | 0x01 = FIRE, 0x00 = HOLD.
+0x020   | TARGET_VEC   | vision_node      | motion_node      | 7 Bytes| Pan (int16), Tilt (int16), Depth (uint16), Locked (uint8). Angles in rad, scaled by 10000.
+0x030   | POS_MOTION   | motion_node      | vision_node      | 4 Bytes| Current absolute Pan (int16) and Tilt (int16) angles in rad, scaled by 10000.
+0x040   | POS_COORD    | coordinator_node | vision_node      | 4 Bytes| Current absolute collimator position in mm (int32).
+0x100   | HB_VISION    | vision_node      | coordinator_node | 1 Byte | Status: 0=OK, 1=WARN, 2=ERR.
+0x110   | HB_MOTION    | motion_node      | coordinator_node | 1 Byte | Status: 0=OK, 1=WARN, 2=ERR.
+0x120   | HB_COORD     | coordinator_node | All Nodes        | 1 Byte | Status: 0=OK, 1=WARN, 2=ERR.
+0x200   | DBG_MOTION   | motion_node      | vision_node      | 8 Bytes| Reserved for FOC states/currents (Debug Mode only).
+>>>>>>> 646e4ab2926da94ea81a3d4fd174ae7e76fe16fb
 0x210   | DBG_COORD    | coordinator_node | vision_node      | 8 Bytes| Reserved for Stepper/Laser states (Debug Mode only).
