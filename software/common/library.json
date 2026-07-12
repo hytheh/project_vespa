@@ -1,0 +1,11 @@
+{
+  "name": "vespa_common",
+  "version": "1.0.0",
+  "description": "Shared CAN protocol and utilities for Project VESPA nodes.",
+  "build": {
+    "srcFilter": [
+      "+<*.c>",
+      "+<*.cpp>"
+    ]
+  }
+}

@@ -1,0 +1,237 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{vespa_style}
+
+\begin{document}
+
+\vespatitlepage
+  {Bibliographie}
+  {Sources, normes et documentation technique}
+  {Document de clôture — juillet 2026\\
+   Bibliographie \textbf{reconstituée}. Voir l'avertissement en page suivante.}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Avertissement sur la reconstitution}
+
+\begin{avertissement}[Cette bibliographie a été reconstituée a posteriori]
+Le dossier bibliographique constitué pendant le projet a été \textbf{perdu}, et l'exemplaire
+conservé du rapport de soutenance ne comporte ni section bibliographique ni liens. La
+présente bibliographie a donc été \textbf{rétablie après coup}, en juillet 2026.
+\end{avertissement}
+
+\paragraph{Méthode de reconstitution.} Les références n'ont pas été devinées. Elles ont été
+rétablies à partir de trois sources matérielles, par ordre de fiabilité :
+
+\begin{enumerate}
+  \item \textbf{Les PDF survivants} (\fichier{docs/references/}). Cinq articles
+        scientifiques et plusieurs manuels constructeur avaient été archivés dans le dépôt.
+        \textbf{Les métadonnées de chacun ont été vérifiées sur la première page du document
+        lui-même} (auteurs, revue, volume, DOI) — et non sur une base de données externe.
+        Ces références sont \textbf{certaines}.
+  \item \textbf{Les composants effectivement utilisés.} Les manuels et fiches techniques du
+        matériel réellement présent dans la nomenclature et dans le code
+        (NUCLEO-G431RB, X-NUCLEO-IHM16M1, OV9281, AS5048A, Jetson Orin Nano).
+        Ces références sont \textbf{certaines} : le matériel est identifié sans ambiguïté par
+        \fichier{platformio.ini}, \fichier{pinout.h} et la nomenclature.
+  \item \textbf{Les dépendances logicielles réelles.} Les bibliothèques que le code
+        \emph{compile et lie} effectivement (OpenCV, SimpleFOC, SocketCAN, V4L2), et les
+        normes dont il applique les prescriptions (ISO 11898, IEC 60825).
+\end{enumerate}
+
+\paragraph{Ce qui relève de la reconstitution raisonnée.} Quelques références
+\emph{fondamentales} (Zhang pour la calibration, Kalman pour le filtrage, Hartley \&
+Zisserman pour la triangulation, Hecht pour l'optique) ne figuraient pas dans les fichiers
+retrouvés, mais \textbf{le code met en \oe uvre leurs méthodes} : \texttt{cv::stereoCalibrate}
+implémente Zhang, \texttt{PredictiveTurretSight} implémente un filtre de Kalman. Elles sont
+citées parce qu'elles sont les sources canoniques de méthodes \emph{démontrablement
+employées}, non parce qu'il est établi qu'elles avaient été consultées à l'époque.
+
+\paragraph{Fichier source.} L'ensemble est maintenu en BibTeX dans
+\textbf{\fichier{docs/src/vespa.bib}}, avec, pour chaque entrée, une note indiquant
+\emph{à quoi elle a servi dans le projet}. C'est ce fichier qu'il faut enrichir, et non ce
+PDF.
+
+% =====================================================================
+\section{Biologie de la cible}
+
+Le projet vise une espèce précise, et cette précision est une \textbf{exigence éthique}, pas
+un détail : il s'agit de neutraliser \emph{Vespa velutina nigrithorax} (invasive) sans
+toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{O'Shea-Wheller \emph{et al.} (2024)} \cite{osheawheller2024vespai} —
+        \textsc{VespAI}. C'est \emph{la} référence structurante du projet : le modèle de
+        détection initialement retenu (YOLOv5s + ResNet, précision-rappel $\geq 0{,}99$).
+        C'est aussi la source du principal verrou : \textbf{il est entraîné en RGB}, et nos
+        capteurs sont monochromes.
+
+  \item \textbf{Sipos \emph{et al.} (2025)} \cite{sipos2025morphologie} — morphologie
+        comparée \emph{velutina} / \emph{crabro} par micro-CT. Double usage : les
+        performances de vol (vitesse, manœuvrabilité, vol stationnaire) alimentent le
+        dimensionnement cinématique ; et l'article établit que la discrimination entre les
+        deux espèces repose largement sur la \textbf{coloration} — ce qui explique pourquoi
+        elle est structurellement compromise en monochrome.
+
+  \item \textbf{Perrard \emph{et al.} (2009)} \cite{perrard2009colonie} — activité de la
+        colonie. Documente le comportement de \textbf{vol de guet} devant les ruches.
+        C'est l'hypothèse opérationnelle qui rend le système viable à 60~fps : on ne traque
+        pas un frelon en vol de croisière, on traque un chasseur en vol quasi stationnaire.
+
+  \item \textbf{Lioy \emph{et al.} (2023)} \cite{lioy2023niche} — recouvrement de niche
+        climatique avec les espèces natives. Fonde le contexte d'invasion et l'exigence de
+        sélectivité.
+
+  \item \textbf{Villemant \emph{et al.} (2015)} \cite{villemant2015parasites} — lutte
+        biologique par nématodes mermithidés. Contrepoint utile : aucune méthode de
+        régulation existante n'est à la fois sélective et efficace, ce qui justifie
+        d'explorer la lutte active.
+\end{itemize}
+
+% =====================================================================
+\section{Vision par ordinateur}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Garrido-Jurado \emph{et al.} (2014)} \cite{garridojurado2014aruco} —
+        marqueurs \textsc{ArUco}. \textbf{Solution effectivement déployée} en remplacement
+        de VespAI : haut contraste, nativement adaptée aux capteurs monochromes, aucun
+        entraînement, pose 3D exacte. Complété par
+        Romero-Ramirez \emph{et al.} (2018) \cite{romeroramirez2018speeded} pour la
+        détection accélérée (algorithme du module \texttt{cv::aruco}).
+
+  \item \textbf{Zhang (2000)} \cite{zhang2000calibration} — calibration de caméra.
+        Méthode implémentée par \texttt{cv::calibrateCamera} / \texttt{cv::stereoCalibrate},
+        utilisée par l'outil \fichier{software/tools/calib\_stereo}.
+
+  \item \textbf{Hartley \& Zisserman (2004)} \cite{hartley2004multiview} — géométrie
+        épipolaire et triangulation. Référence de \texttt{StereoTriangulator}.
+
+  \item \textbf{Kalman (1960)} \cite{kalman1960filter} — filtrage prédictif. Fondement de
+        \texttt{PredictiveTurretSight}, qui compense la latence propre de la chaîne
+        vision $\rightarrow$ CAN $\rightarrow$ asservissement. Sans cette prédiction, la
+        tourelle vise systématiquement là où la cible \emph{était}.
+
+  \item \textbf{Ultralytics YOLOv5} \cite{ultralytics2020yolov5} — architecture
+        sous-jacente de VespAI. Le dépôt est \emph{requis} pour désérialiser les poids
+        \fichier{.pt} (qui référencent le module Python \texttt{models}) — détail non
+        évident qui a coûté du temps.
+
+  \item \textbf{OpenCV} \cite{opencv}, \textbf{V4L2} \cite{v4l2},
+        \textbf{TensorRT} \cite{nvidia_tensorrt} — bibliothèques et interfaces
+        effectivement employées. V4L2 (\texttt{mmap}) porte la chaîne d'acquisition
+        « zéro-copie ».
+\end{itemize}
+
+% =====================================================================
+\newpage
+\section{Commande moteur}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{SimpleFOC} \cite{simplefoc} — bibliothèque d'asservissement vectoriel
+        (version 2.3.2) utilisée par le \fichier{motion\_node}.
+
+  \item \textbf{ST UM2538} \cite{st_um2538_focsdk} — théorie de la commande vectorielle
+        (transformées de Clarke et Park) appliquée au matériel ST.
+
+  \item \textbf{ST UM2415} \cite{st_um2415_ihm16m1} — étage de puissance
+        X-NUCLEO-IHM16M1 (STSPIN830). Deux exemplaires, cavaliers en FOC 3 shunts.
+
+  \item \textbf{ST UM2505} \cite{st_um2505_nucleog431} — carte NUCLEO-G431RB.
+        \textbf{C'est ce document qui établit que \broche{PA2} est câblée sur la liaison
+        série virtuelle du ST-LINK} — origine d'un verrou coûteux (voir « Difficultés
+        techniques »).
+
+  \item \textbf{ams AS5048A} \cite{ams_as5048a} — encodeur magnétique absolu 14 bits.
+        Fixe la borne théorique de précision : $360/2^{14} \approx 0{,}022^\circ$.
+\end{itemize}
+
+% =====================================================================
+\section{Capteurs et calculateur}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{OmniVision OV9281} \cite{omnivision_ov9281} — capteur monochrome à
+        obturateur global $1\,280 \times 800$. Le choix du monochrome n'est pas une
+        préférence : \textbf{aucun capteur trichrome à obturateur global n'existe à prix
+        abordable}. C'est la cause racine de l'incompatibilité avec VespAI.
+
+  \item \textbf{Arducam UC-788} \cite{arducam_uc788} — carte porteuse assurant la
+        compatibilité avec l'écosystème Jetson et le déclenchement externe.
+
+  \item \textbf{NVIDIA Jetson Orin Nano — carte porteuse} \cite{nvidia_orin_nano_carrier} —
+        brochage de l'en-tête 40 points. Source des broches PWM (32/33) utilisées pour la
+        synchronisation stéréo, \textbf{et} des broches CAN0 (\broche{PAA0}/\broche{PAA1},
+        en-tête 31/29) restées non réclamées par le \emph{pinmux}.
+
+  \item \textbf{JetPack / Jetson Linux} \cite{nvidia_jetpack} — environnement déployé
+        (JetPack 6.2). \textbf{Le noyau doit être remplacé par le noyau Arducam.}
+\end{itemize}
+
+% =====================================================================
+\section{Communication}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{ISO 11898-1:2015} \cite{iso11898_1} — couche liaison CAN. L'arbitrage bit à
+        bit non destructif fonde toute la hiérarchie de priorités du protocole VESPA :
+        \texttt{FIRE\_CMD} porte l'identifiant le plus faible (\texttt{0x010}), donc la
+        priorité absolue sur le bus.
+
+  \item \textbf{SocketCAN} \cite{socketcan} — pile CAN de Linux, côté Jetson. C'est
+        l'interface virtuelle \texttt{vcan0} qui a permis de valider le protocole de bout en
+        bout \textbf{malgré l'indisponibilité du bus physique}.
+\end{itemize}
+
+% =====================================================================
+\section{Optique et sécurité laser}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{IEC 60825-1:2014} \cite{iec60825} — classification des produits laser.
+        \textbf{La norme qui commande tout le dispositif de sécurité du projet.}
+        L'effecteur (diode bleue multiwatt) relève de la \textbf{Classe 4} : dangereux
+        y compris en réflexion diffuse, risque d'incendie, aucune distance sûre en
+        intérieur. C'est la raison pour laquelle la diode n'a jamais été mise sous tension
+        en l'absence de watchdog.
+
+  \item \textbf{Hecht, \emph{Optics}} \cite{hecht2016optics} — relations de conjugaison de
+        Descartes, utilisées pour établir la loi de commande du mécanisme de collimation
+        dynamique (deux lentilles minces convergentes).
+
+  \item \textbf{Siegman, \emph{Lasers}} \cite{siegman1986lasers} — divergence et irradiance
+        du faisceau. Support du tracé de densité de puissance le long de l'axe optique
+        (\fichier{simulation/optique/Laser\_Optics\_v1.m}).
+\end{itemize}
+
+% =====================================================================
+\section{Travaux antérieurs}
+
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Cosson \& Grimal (2025)} \cite{cosson2025vespa_mk1} — \textbf{prototype
+        mk.1}. Détection YOLOv8, tourelle à moteurs pas-à-pas Nema 17 sur Arduino Uno, diode
+        laser de quelques milliwatts. Ce sont les limites de ce prototype — décrochage,
+        \emph{jitter}, dérive cumulative — que le mk.2 a caractérisées puis levées.
+        \textbf{Référence citée dans le rapport de soutenance sous la forme
+        « cf. Rapport 2024/2025 » ; le document lui-même n'a pas été retrouvé} et devra être
+        récupéré auprès de l'établissement.
+
+  \item \textbf{Delmas, Desmedt \& Gilson (2026)} \cite{delmas2026vespa_mk2} — le rapport de
+        soutenance du présent prototype, conservé tel quel dans
+        \fichier{docs/Rapport\_PFE\_2026\_VESPA.pdf}.
+\end{itemize}
+
+\begin{note}[Lacune identifiée]
+La seule référence \textbf{manquante} et \textbf{non reconstituable} est le rapport de PFE
+2024/2025 de L.~Cosson et H.~Grimal (prototype mk.1), cité dans le rapport de soutenance
+mais absent des archives. Il devrait être récupérable auprès de l'ENSIL-ENSCI ou de
+M.~Ousset.
+\end{note}
+
+% =====================================================================
+\newpage
+\section*{Références complètes}
+\addcontentsline{toc}{section}{Références complètes}
+
+\nocite{*}
+\bibliographystyle{plain}
+\bibliography{vespa}
+
+\end{document}

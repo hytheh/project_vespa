@@ -1,0 +1,532 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{vespa_style}
+
+\begin{document}
+
+\vespatitlepage
+  {Rapport technique}
+  {Guide de reproduction — matériel, système, firmware}
+  {Document de clôture — juillet 2026\\
+   Tout ce qui est nécessaire pour reconstruire le prototype mk.2 depuis zéro.}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Objet de ce document}
+
+Ce document est un \textbf{guide de reproduction}. Il décrit, dans l'ordre où il faut les
+exécuter, les opérations permettant de reconstituer le prototype \vespa{} mk.2 :
+approvisionnement, câblage, installation système, compilation des deux firmwares,
+calibration, mise en route.
+
+Il ne justifie pas les choix de conception — cela relève du rapport de soutenance
+(\fichier{docs/Rapport\_PFE\_2026\_VESPA.pdf}). Il ne raconte pas non plus les impasses —
+cela relève de \fichier{docs/Difficultes\_techniques.pdf}.
+
+\begin{avertissement}[Lisez d'abord « Difficultés techniques »]
+Plusieurs étapes de ce guide comportent des pièges qui \textbf{ne se voient pas} et dont le
+symptôme n'a aucun rapport apparent avec la cause (une broche qui coupe la console série,
+un outil NVIDIA qui détruit la configuration des caméras). Elles sont signalées ici, mais
+elles ne sont \emph{expliquées} que dans le document des difficultés. Le temps passé à le
+lire sera regagné plusieurs fois.
+\end{avertissement}
+
+\paragraph{État de ce qui est reproductible.} Ce guide mène à un système qui \textbf{suit
+une cible ArUco en 3D et oriente la tourelle}. Il ne mène pas à un système qui reconnaît un
+frelon (modèle indisponible), ni qui tire (watchdog non implémenté, laser jamais mis sous
+tension). Voir la synthèse en fin de document.
+
+% =====================================================================
+\section{Architecture matérielle}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}llX@{}}
+\toprule
+\textbf{N\oe ud} & \textbf{Calculateur} & \textbf{Rôle} \\
+\midrule
+\texttt{vision\_node} & Jetson Orin Nano Super 8~Go &
+Acquisition stéréo synchronisée, détection, triangulation, prédiction, émission de la
+consigne \\
+\addlinespace
+\texttt{motion\_node} & NUCLEO-G431RB &
+Asservissement FOC en boucle fermée des axes \textsc{pan} et \textsc{tilt} \\
+\addlinespace
+\texttt{coordination\_node} & ESP32 &
+Collimation, tir, watchdog — \textcolor{vespared}{\textbf{non implémenté}} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent
+Les n\oe uds communiquent sur un \textbf{bus CAN 2.0B à 500~kbit/s} (trames standard
+11~bits). Le dictionnaire de données complet est en annexe
+(\fichier{docs/annexes/protocole\_can.md}) ; sa définition normative est
+\fichier{software/common/can\_protocol.h}.
+
+% =====================================================================
+\section{Nomenclature (BOM)}
+
+Nomenclature du prototype mk.2, telle qu'effectivement approvisionnée.
+Total $\approx$ \textbf{830~\euro{}} TTC.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}Xlr@{}}
+\toprule
+\textbf{Élément} & \textbf{Qté} & \textbf{Prix TTC} \\
+\midrule
+\multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Calcul et électronique}}} \\
+Jetson Orin Nano Super Developer Kit & 1 & 311,18~\euro{} \\
+B-G431B-ESC1 \textit{\footnotesize (voir note ci-dessous)} & 2 & 16,31~\euro{} \\
+ESP32-C3 SuperMini \textit{\footnotesize (coordination — non utilisé)} & 1 & 4,29~\euro{} \\
+Alimentation AC-DC 24~V / 150~W & 1 & 5,29~\euro{} \\
+Transceivers CAN (lot de 10, type WCMCU-230 / SN65HVD230) & 1 & 5,19~\euro{} \\
+TMC2209 (lot de 4) \textit{\footnotesize (collimation)} & 1 & 9,09~\euro{} \\
+\addlinespace
+\multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Vision}}} \\
+Module caméra Arducam OV9281 1~MP monochrome \emph{global shutter} & 2 & 142,59~\euro{} \\
+Objectif M12 5~MP 4,6~mm sans distorsion & 2 & 9,29~\euro{} \\
+\addlinespace
+\multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Mécanique et actionneurs}}} \\
+iFlight iPower GM5208-12 + encodeur AS5048A (paire) & 1 & 134,99~\euro{} \\
+Actionneur linéaire course 35~mm & 1 & 20,42~\euro{} \\
+Actionneur linéaire course 10~mm & 2 & 1,99~\euro{} \\
+Capteur photoélectrique en U \textit{\footnotesize (prise d'origine)} & 1 & 2,54~\euro{} \\
+\addlinespace
+\multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Optique de tir}}} \\
+\textbf{Diode laser bleue 5,5~W} \textcolor{vespared}{\textbf{(Classe 4)}} & 1 & 83,69~\euro{} \\
+Lentille asphérique K9 D63 F100 \textit{\footnotesize (L2, focale 100~mm)} & 1 & 23,59~\euro{} \\
+\addlinespace
+\multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Sécurité — non optionnel}}} \\
+\textbf{Lunettes de protection OD7+ CE 190--550~nm} & 1 & 30,29~\euro{} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{note}[Deux divergences entre la nomenclature et le matériel réellement utilisé]
+\begin{enumerate}[nosep]
+  \item \textbf{Cartes de commande moteur.} La nomenclature liste des \textbf{B-G431B-ESC1}.
+        Le firmware livré cible en réalité une \textbf{NUCLEO-G431RB} portant deux shields
+        \textbf{X-NUCLEO-IHM16M1} (STSPIN830) — c'est ce que déclarent
+        \fichier{platformio.ini} (\texttt{board = nucleo\_g431rb}) et
+        \fichier{pinout.h}. \textbf{Suivre le code, pas la nomenclature.}
+  \item \textbf{Le laser.} La nomenclature (et donc le matériel acheté) porte sur une diode
+        \textbf{5,5~W bleue}. Le dimensionnement théorique du rapport de soutenance a été
+        conduit pour $P = 5$~W à 460~nm. Les deux valeurs sont cohérentes en ordre de
+        grandeur ; c'est la diode 5,5~W qui est physiquement présente.
+        \textbf{Classe 4 dans les deux cas.}
+\end{enumerate}
+\end{note}
+
+\paragraph{Moteurs.} GM5208-12, PMSM \emph{pancake} : \textbf{7 paires de pôles}
+(14 aimants), $R_s = 7{,}48~\Omega$, $L_s = 4{,}49$~mH, tension nominale 24~V, courant
+nominal 1,5~A. Encodeur magnétique absolu AS5048A, \textbf{14 bits} $\rightarrow$ résolution
+$360/2^{14} \approx 0{,}022^\circ$, borne théorique de précision de la tourelle.
+
+% =====================================================================
+\section{Câblage}
+
+Le câblage complet, broche à broche, est en annexe :
+\textbf{\fichier{docs/annexes/cablage.md}}. Il n'est pas reproduit ici, mais
+\textbf{deux points sont critiques} et doivent être connus avant de souder :
+
+\begin{avertissement}[Les deux pièges du câblage]
+\textbf{1. Le potentiomètre \textsc{pan} n'est PAS sur \broche{PA2}, mais sur
+\broche{PB14}.}\\
+\broche{PA2} est câblée sur \texttt{USART2\_TX} (console série du ST-LINK) sur la
+NUCLEO-G431RB. Y brancher le potentiomètre \textbf{coupe la console}. Le fichier historique
+\fichier{STM32\_WiringManifest.txt} indique encore \broche{PA2} : il est faux.
+
+\medskip
+\textbf{2. \broche{PA4} est réservée au SPI (NSS matériel), pas au retour de courant.}\\
+Elle doit rester haute, sous peine de faire basculer le SPI1 — qui porte les deux encodeurs
+— en mode esclave. Le retour de courant de la phase W du moteur 1 est sacrifié en
+conséquence.
+\end{avertissement}
+
+\paragraph{Bus CAN.} Transceiver \textbf{3,3~V uniquement} (SN65HVD230 / WCMCU-230).
+\textbf{Ne jamais l'alimenter en 5~V} : cela détruit le composant et peut endommager les
+broches du Jetson.
+\begin{itemize}[nosep]
+  \item Côté Jetson : \texttt{CTX} $\rightarrow$ broche \textbf{31}, \texttt{CRX}
+        $\rightarrow$ broche \textbf{29}, 3V3 $\rightarrow$ broche 1, GND $\rightarrow$
+        broche 6.
+  \item Côté STM32 : \texttt{CAN\_TX} = \broche{PB9}, \texttt{CAN\_RX} = \broche{PB8}.
+  \item \textbf{Masse commune obligatoire} entre les n\oe uds (3\ieme{} fil) : le CAN est
+        différentiel, mais le transceiver a une limite de tension de mode commun.
+  \item Terminaison \textbf{120~$\Omega$} aux \emph{deux extrémités} du bus, et
+        \emph{seulement} aux extrémités. Les modules WCMCU-230 embarquent une résistance
+        (sérigraphiée \texttt{R2}, marquage « 121 ») : la dessouder sur tout n\oe ud qui
+        n'est pas en bout de bus.
+\end{itemize}
+
+% =====================================================================
+\newpage
+\section{Installation du Jetson Orin Nano}
+
+\begin{avertissement}[L'étape la plus délicate du projet]
+Le Jetson ne fonctionne \textbf{pas} avec le noyau JetPack standard : les caméras OV9281
+exigent le \textbf{noyau Arducam}. Et une fois cette configuration en place, l'outil
+\fichier{jetson-io.py} \textbf{ne doit plus jamais être exécuté} — il régénère globalement
+les \emph{overlays} d'arbre de périphériques et \textbf{détruit la synchronisation stéréo}.
+\end{avertissement}
+
+\subsection{Système de base}
+
+\begin{enumerate}
+  \item Flasher le \textbf{JetPack 6.2} (L4T r36.4) sur le Jetson Orin Nano Super, via
+        NVIDIA SDK Manager. Racine sur NVMe recommandée (c'est la configuration d'origine).
+  \item Installer le \textbf{noyau et les pilotes Arducam} pour l'OV9281, en suivant la
+        procédure du constructeur. Cela installe un noyau dédié dans
+        \fichier{/boot/arducam/}.
+\end{enumerate}
+
+\subsection{Overlays d'arbre de périphériques}
+
+La configuration matérielle est portée par trois \emph{overlays} chargés au démarrage. Les
+fichiers de référence sont conservés dans \fichier{jetson/} :
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Overlay} & \textbf{Rôle} \\
+\midrule
+\fichier{...-arducam-dual.dtbo} &
+Double caméra OV9281. C'est lui qui résout le conflit apparent d'adresse
+I\textsuperscript{2}C (un bus par port CSI). \\
+\addlinespace
+\fichier{jetson-io-hdr40-user-custom.dtbo} &
+\textbf{PWM de synchronisation} (broches 32 et 33 de l'en-tête 40 points).
+\textcolor{vespared}{\textbf{Ne pas modifier ni régénérer.}} \\
+\addlinespace
+\fichier{can0-pinmux.dtbo} &
+Tentative de routage du CAN0. \textcolor{vespared}{\textbf{Ne fonctionne pas}} — voir
+« Difficultés techniques ». \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\noindent
+Le fichier \fichier{/boot/extlinux/extlinux.conf} de référence est fourni
+(\fichier{jetson/extlinux.conf.reference}). L'entrée active y charge le noyau Arducam et
+la liste d'\emph{overlays} :
+
+\begin{lstlisting}[language=bash]
+LABEL JetsonIO
+    MENU LABEL Custom Header Config: <CSI Camera ARDUCAM Dual>
+    LINUX /boot/arducam/Image
+    FDT   /boot/arducam/dts/dtb/tegra234-p3768-0000+p3767-0005-nv-super.dtb
+    INITRD /boot/initrd
+    APPEND ${cbootargs} root=PARTUUID=... rw rootwait rootfstype=ext4 ...
+    OVERLAYS /boot/arducam/dts/tegra234-p3767-camera-p3768-arducam-dual.dtbo,
+             /boot/jetson-io-hdr40-user-custom.dtbo,
+             /boot/can0-pinmux.dtbo
+\end{lstlisting}
+
+\subsection{Vérifications}
+
+\begin{lstlisting}[language=bash]
+# Les deux cameras doivent apparaitre
+ls /dev/video*                       # -> /dev/video0  /dev/video1
+v4l2-ctl --list-devices
+
+# Le PWM de synchronisation doit etre exportable
+ls /sys/class/pwm/pwmchip3/
+
+# Le CAN physique : NE FONCTIONNE PAS a ce jour (verrou ouvert)
+sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
+#   -> aucune sortie = les broches PAA ne sont pas reclamees
+\end{lstlisting}
+
+\subsection{Bus CAN virtuel (indispensable pour travailler)}
+
+Le bus physique étant inopérant, le développement et la validation se font sur
+\texttt{vcan0}. Le fichier \fichier{jetson/systemd/vcan.conf} charge le module au
+démarrage :
+
+\begin{lstlisting}[language=bash]
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan
+sudo ip link set up vcan0
+candump vcan0                        # observer les trames
+\end{lstlisting}
+
+\noindent
+Le service \fichier{jetson/systemd/can0-setup.service} configure le bus \emph{physique}
+(500~kbit/s) — il est écrit pour ne se déclencher que si le noyau crée réellement le
+périphérique \texttt{can0}, ce qui n'est jamais arrivé.
+
+% =====================================================================
+\newpage
+\section{Compilation}
+
+\subsection{N\oe ud de vision (Jetson)}
+
+\paragraph{Dépendances.}
+\begin{lstlisting}[language=bash]
+sudo apt install libopencv-dev libi2c-dev libzmq3-dev cppzmq-dev \
+                 v4l-utils can-utils cmake build-essential
+\end{lstlisting}
+
+\begin{note}[Dépendances exigées mais non utilisées]
+Le \fichier{CMakeLists.txt} déclare \texttt{find\_package(CUDA REQUIRED)} et
+\texttt{find\_package(VPI 3.0 REQUIRED)}, ainsi qu'un test sur \fichier{i2c/smbus.h}.
+\textbf{Le chemin de code actuel (ArUco + OpenCV) n'en a pas besoin} : ces dépendances sont
+un vestige de la voie TensorRT abandonnée. Elles restent \emph{obligatoires} pour que
+CMake aboutisse. Si la reprise ne vise pas l'inférence, ces trois exigences peuvent être
+retirées sans dommage.
+\end{note}
+
+\paragraph{Construction.}
+\begin{lstlisting}[language=bash]
+cd software/vision_node
+mkdir -p build && cd build
+cmake .. && make -j6
+\end{lstlisting}
+
+\paragraph{Cibles produites.}
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Binaire} & \textbf{Usage} \\
+\midrule
+\texttt{vision\_node} & \textbf{Cible de production.} Sans interface, sans ZeroMQ. Émet sur le CAN. \\
+\texttt{stereo\_tracker} & Idem + flux ZeroMQ pour la visualisation (\emph{live viewport}). \\
+\texttt{calibration\_bridge} & Pont ZeroMQ pour les outils Python de calibration. \\
+\texttt{test\_camera\_hal} & Test unitaire d'acquisition. \\
+\texttt{test\_hardware\_sync} & \textbf{Test de la synchronisation stéréo} — à lancer en premier. \\
+\texttt{test\_stereo\_pipeline} & Test de la triangulation hors ligne. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Exécution.} Les droits \emph{root} sont nécessaires (accès à
+\fichier{/sys/class/pwm} et \fichier{/dev/video*}) :
+\begin{lstlisting}[language=bash]
+sudo ./vision_node
+\end{lstlisting}
+
+\subsection{N\oe ud de mouvement (STM32)}
+
+Projet PlatformIO. La bibliothèque commune est liée par lien symbolique, ce qui garantit
+qu'il n'existe \textbf{qu'une seule définition} du protocole CAN :
+
+\begin{lstlisting}[language=bash]
+cd software/motion_node
+pio run                  # compiler
+pio run -t upload        # televerser (sonde ST-LINK integree a la Nucleo)
+pio device monitor -b 115200
+\end{lstlisting}
+
+\noindent
+Configuration (\fichier{platformio.ini}) : \texttt{board = nucleo\_g431rb}, framework
+Arduino, SimpleFOC 2.3.2, avec activation explicite des modules HAL
+\texttt{OPAMP} et \texttt{FDCAN}.
+
+\begin{avertissement}[Ne jamais instancier \texttt{MotionCan} sans arguments]
+Le constructeur déclare des valeurs par défaut \texttt{(PA11, PA12)} qui sont
+\textbf{fausses} pour ce câblage — \broche{PA11} est le \texttt{EN/FAULT} du moteur~1.
+Toujours passer les broches explicitement :
+\texttt{MotionCan canBus(CAN\_RX, CAN\_TX);} soit \broche{PB8}/\broche{PB9}.
+\end{avertissement}
+
+% =====================================================================
+\newpage
+\section{Calibration}
+
+Trois outils web (Flask) tournent sur le Jetson et s'utilisent depuis un navigateur
+distant — la machine étant sans écran.
+
+\begin{avertissement}[Un seul programme à la fois sur le matériel]
+Le n\oe ud de vision et les outils Python se disputent le bus I\textsuperscript{2}C. Un
+verrou d'exclusion (\fichier{/tmp/vespa\_hardware.lock}) fait \textbf{échouer volontairement}
+le second démarrage. \textbf{Ce n'est pas un bug} : arrêter l'un avant de lancer l'autre.
+\end{avertissement}
+
+\subsection{Ordre des opérations}
+
+\begin{enumerate}
+  \item \textbf{Exposition et gain} — \fichier{software/tools/calib\_exposition/}
+        \begin{lstlisting}[language=bash]
+cd software/tools/calib_exposition && ./run_exposure.sh   # http://<jetson>:5000
+        \end{lstlisting}
+        Régler l'exposition et le gain jusqu'à obtenir un marqueur net et contrasté.
+        Les profils sont enregistrés dans
+        \fichier{software/vision\_node/config/profiles/} (P1, P2~«~sombre~», P3~«~lumineux~»),
+        le profil actif étant désigné par \fichier{config/.active\_profile}.
+
+        \begin{note}[Limite connue]
+        Le capteur n'applique pas le même calcul de temps-ligne en mode maître et en mode
+        déclenchement externe. \textbf{Les valeurs réglées par cet outil ne correspondent pas
+        exactement à celles du \emph{pipeline} C++.} Prévoir un ajustement final en
+        conditions réelles.
+        \end{note}
+
+  \item \textbf{Calibration stéréo} — \fichier{software/tools/calib\_stereo/}
+        \begin{lstlisting}[language=bash]
+cd software/tools/calib_stereo && ./run_calibration.sh    # http://<jetson>:5000
+        \end{lstlisting}
+        Méthode de Zhang \cite{zhang2000calibration} sur mire d'échiquier.
+        \textbf{Couvrir tout le champ} — coins, bords, près et loin, et pas seulement le
+        centre : sans couverture des bords, la distorsion ne peut pas être résolue, la
+        focale « hallucine » et l'erreur RMS explose. Résultat écrit dans
+        \fichier{config/stereovision\_settings.json}.
+
+  \item \textbf{Vérification} — \fichier{software/tools/viewport\_live/}
+        \begin{lstlisting}[language=bash]
+cd software/tools/viewport_live && ./run_liveviewport.sh
+        \end{lstlisting}
+        Affiche le flux avec superposition : position courante du marqueur et
+        \textbf{visée prédictive} (réticule cyan) issue du filtre de Kalman.
+\end{enumerate}
+
+% =====================================================================
+\section{Mise en route}
+
+\begin{enumerate}
+  \item \textbf{Vérifier la synchronisation} avant toute chose :
+        \begin{lstlisting}[language=bash]
+sudo ./build/test_hardware_sync
+        \end{lstlisting}
+        La dérive inter-caméras doit être nulle. Si elle ne l'est pas, ne pas aller plus
+        loin : la triangulation serait fausse.
+
+  \item \textbf{Monter le bus} (virtuel, en l'état actuel) : \texttt{vcan0}, et lancer
+        \texttt{candump} sur une seconde console.
+
+  \item \textbf{Démarrer le n\oe ud de mouvement.} À la mise sous tension, la séquence FOC
+        s'initialise. Les décalages d'encodeur sont \textbf{codés en dur} dans
+        \fichier{main.cpp} :
+        \texttt{motorPan.sensor\_offset = 4{,}7500}, \texttt{motorTilt.sensor\_offset =
+        4{,}8179} — ils repoussent le passage $0/2\pi$ hors de la plage utile.
+        \textbf{Ils sont propres à un montage mécanique donné} et devront être réétalonnés
+        sur un nouveau montage (\fichier{Examples/OneTimeInitialisationAngle.cpp}).
+
+  \item \textbf{Démarrer le n\oe ud de vision} : \texttt{sudo ./vision\_node}.
+
+  \item \textbf{Présenter le marqueur ArUco} dans la \emph{killbox}. La tourelle doit
+        suivre.
+\end{enumerate}
+
+\paragraph{Butées logicielles} (\fichier{main.cpp}, en radians) — elles protègent la
+mécanique et doivent être revues sur un nouveau montage :
+\begin{center}
+\begin{tabular}{@{}lrr@{}}
+\toprule
+\textbf{Axe} & \textbf{Min} & \textbf{Max} \\
+\midrule
+\textsc{pan}  & $-0{,}52$ rad ($-30^\circ$) & $+0{,}52$ rad ($+30^\circ$) \\
+\textsc{tilt} & $-0{,}26$ rad ($-15^\circ$) & $+0{,}78$ rad ($+45^\circ$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\paragraph{Arrêt d'urgence.} Bouton bleu (\broche{PC13}). L'arrêt est \textbf{latché} :
+coupure des deux étages de puissance, diffusion d'un \emph{heartbeat} \texttt{FAULT}, puis
+boucle infinie. \textbf{Seul un reset matériel (bouton noir) permet de repartir.} C'est
+délibéré : sur un système portant un laser de Classe 4, aucun redémarrage automatique n'est
+acceptable.
+
+% =====================================================================
+\newpage
+\section{Zone opérationnelle et dimensionnement}
+
+\paragraph{La \emph{killbox}.} Volume dans lequel une cible peut être neutralisée :
+parallélépipède de \textbf{500~mm $\times$ 310~mm $\times$ 300~mm}
+(longueur $\times$ largeur $\times$ hauteur). La tourelle est placée \textbf{en surplomb},
+de sorte que le tir soit dirigé vers le sol.
+
+\paragraph{Optique.} Le compromis porte sur le GSD (\emph{Ground Sampling Distance}) : il ne
+doit pas dépasser $\approx 0{,}5$~mm/px pour rester exploitable par un modèle de détection.
+Pour un capteur $1\,280 \times 800$, le script
+\fichier{simulation/vision/Camera\_PosResAttitude\_v6.m} donne :
+\[
+  f = 6~\text{mm}, \qquad d_n = 990~\text{mm}
+\]
+
+\paragraph{Cadence.} La boucle complète doit tenir dans \textbf{16,6~ms} (60~Hz). À 60~fps,
+le système suit une cible se déplaçant jusqu'à $0{,}6~\text{m}\cdot\text{s}^{-1}$ — ce qui
+suppose un \textbf{frelon en vol de guet quasi stationnaire}, comportement effectivement
+documenté devant les ruches \cite{perrard2009colonie}. Un frelon en vol rapide
+($\approx 6~\text{m}\cdot\text{s}^{-1}$) exigerait 600~fps : \textbf{hors de portée}, et
+c'est une limite assumée du système.
+
+\paragraph{Obturateur global : pourquoi il est non négociable.} Le flou de mouvement vaut
+$b = v \cdot t_{\text{exp}} / R$. À $0{,}6~\text{m}\cdot\text{s}^{-1}$, avec 2~ms
+d'exposition et $R = 0{,}5$~mm/px, on obtient $b = 2$~px — sur une cible qui n'en mesure que
+20 à 35. Un obturateur à balayage (\emph{rolling shutter}) est donc éliminé. Or aucun
+capteur \textbf{trichrome} à obturateur global n'existe à prix abordable : \textbf{d'où le
+capteur monochrome, et d'où l'incompatibilité avec VespAI}
+(voir « Difficultés techniques »).
+
+% =====================================================================
+\section{Structure du dépôt}
+
+\begin{lstlisting}
+project_vespa/
+|- docs/                  Rapports (PDF + sources LaTeX), annexes, references
+|  |- src/                Sources LaTeX + vespa.bib + figures
+|  |- annexes/            Cablage, protocole CAN, BOM, setup Jetson, securite
+|  \- references/         Articles, datasheets, etudes preparatoires
+|- hardware/              Mecanique (impressions 3D), moteurs
+|- jetson/                Configuration systeme (overlays, services CAN, extlinux)
+|- simulation/            Scripts MATLAB de dimensionnement (vision + optique)
+|- software/
+|  |- common/             Protocole CAN partage (C, portable STM32/ESP32/Linux)
+|  |- vision_node/        Jetson - C++17 / OpenCV / V4L2 / SocketCAN (CMake)
+|  |- motion_node/        STM32G431RB - SimpleFOC / FDCAN (PlatformIO)
+|  |- coordination_node/  ESP32 - NON IMPLEMENTE (specification seule)
+|  |- tools/              Calibration stereo, exposition, viewport
+|  \- legacy_mk1_bench/   Banc de caracterisation mk.1 (Arduino Uno)
+\- tools/                 Scripts utilitaires du depot
+\end{lstlisting}
+
+\paragraph{Le banc mk.1.} \fichier{software/legacy\_mk1\_bench/} contient le code Arduino
+ayant servi à caractériser le prototype de première génération (comparaison des algorithmes
+« classique » et « accumulateur », mesure du \emph{jitter}, test d'endurance). Ce sont les
+\textbf{annexes A à D du rapport de soutenance}. Il est conservé parce qu'il porte les
+mesures qui justifient l'abandon des moteurs pas-à-pas.
+
+% =====================================================================
+\section{Synthèse de l'état livré}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lXl@{}}
+\toprule
+\textbf{Sous-système} & \textbf{État} & \textbf{Validé sur} \\
+\midrule
+Acquisition stéréo & Synchronisation matérielle 60~Hz, dérive 0,000~ms &
+\textcolor{vespagreen}{matériel réel} \\
+Triangulation & Stéréo éparse sur marqueur ArUco &
+\textcolor{vespagreen}{matériel réel} \\
+Prédiction & Filtre de Kalman, compense la latence de la chaîne &
+\textcolor{vespagreen}{matériel réel} \\
+Asservissement & FOC boucle fermée, 2 axes, butées, arrêt d'urgence &
+\textcolor{vespagreen}{matériel réel} \\
+Protocole CAN & Sérialisation, priorités, \emph{heartbeats} &
+\textcolor{vespaaccent}{\texttt{vcan0} seulement} \\
+\midrule
+\textbf{Bus CAN physique} & \textcolor{vespared}{\textbf{Ne fonctionne pas}} — \emph{pinmux}
+non réclamé & — \\
+\textbf{Détection du frelon} & \textcolor{vespared}{\textbf{Absente}} — remplacée par ArUco
+& — \\
+\textbf{Watchdog} & \textcolor{vespared}{\textbf{Non implémenté}} & — \\
+\textbf{Tir laser} & \textcolor{vespared}{\textbf{Jamais effectué}} (décision de sécurité)
+& — \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{avertissement}[Avant toute mise sous tension du laser]
+Le laser est de \textbf{Classe 4}. Il n'a jamais été alimenté, faute de watchdog. Lire
+\fichier{docs/annexes/securite\_laser.md} \textbf{en entier} avant d'y toucher. La
+collimation dynamique réduit le risque d'incendie, \textbf{pas} le risque oculaire, qui
+persiste sur près de 200~m.
+\end{avertissement}
+
+% =====================================================================
+\newpage
+\bibliographystyle{plain}
+\bibliography{vespa}
+
+\end{document}

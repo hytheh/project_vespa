@@ -1,0 +1,16 @@
+[Unit]
+Description=VESPA Physical CAN0 Network Setup
+# Do not run until the kernel physically creates the can0 device
+BindsTo=sys-subsystem-net-devices-can0.device
+After=sys-subsystem-net-devices-can0.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/sbin/ip link set can0 type can bitrate 500000 restart-ms 500
+ExecStart=/sbin/ip link set up can0
+ExecStop=/sbin/ip link set down can0
+
+[Install]
+# Trigger this script the moment udev detects the hardware
+WantedBy=sys-subsystem-net-devices-can0.device

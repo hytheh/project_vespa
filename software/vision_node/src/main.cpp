@@ -35,10 +35,10 @@ void signalHandler(int)
 }
 
 // --- HARDWARE ENDSTOPS (Radians) ---
-const double MAX_PAN_RAD = M_PI / 2.0;
-const double MIN_PAN_RAD = -M_PI / 2.0;
-const double MAX_TILT_RAD = M_PI / 4.0;
-const double MIN_TILT_RAD = -20.0 * (M_PI / 180.0);
+const double MAX_PAN_RAD = 0.52;         // -30deg
+const double MIN_PAN_RAD = -0.52;        // +30deg
+const double MAX_TILT_RAD = 0.78;        // +45deg
+const double MIN_TILT_RAD = -0.26;       // -15deg
 const double FIRE_TOLERANCE_RAD = 0.035; // ~2.0 degrees
 
 int main()

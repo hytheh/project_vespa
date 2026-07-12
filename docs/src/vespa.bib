@@ -1,0 +1,484 @@
+% =====================================================================
+%  Projet V.E.S.P.A. — Bibliographie
+%
+%  Bibliographie reconstituée a posteriori (juillet 2026). Le dossier
+%  bibliographique d'origine ayant été perdu, les références ci-dessous
+%  ont été rétablies à partir :
+%    - des PDF survivants dans docs/references/ (métadonnées vérifiées
+%      sur la première page de chaque article) ;
+%    - des composants effectivement utilisés (datasheets, manuels
+%      constructeur) ;
+%    - des dépendances logicielles réellement présentes dans le code.
+%
+%  Convention de clés : auteur/organisme + année + mot-clé.
+% =====================================================================
+
+
+% =====================================================================
+%  1. BIOLOGIE DE LA CIBLE — Vespa velutina nigrithorax
+% =====================================================================
+
+@article{osheawheller2024vespai,
+  author  = {O'Shea-Wheller, Thomas A. and Corbett, Andrew and
+             Osborne, Juliet L. and Recker, Mario and Kennedy, Peter J.},
+  title   = {{VespAI}: a deep learning-based system for the detection of
+             invasive hornets},
+  journal = {Communications Biology},
+  volume  = {7},
+  number  = {1},
+  pages   = {354},
+  year    = {2024},
+  doi     = {10.1038/s42003-024-05979-z},
+  url     = {https://doi.org/10.1038/s42003-024-05979-z},
+  note    = {Modèle de détection initialement retenu pour le projet.
+             Architecture YOLOv5s + ResNet, score précision-rappel
+             $\geq 0{,}99$. Entraîné sur images RGB : c'est cette
+             contrainte qui a provoqué le verrou décrit au
+             chapitre « Reconnaissance biologique ».},
+  file    = {docs/references/articles/OSheaWheller2024_VespAI_CommsBiology.pdf}
+}
+
+@article{sipos2025morphologie,
+  author  = {Sipos, Tamás and Kolics, Balázs and Kolics-Horváth, Éva and
+             Donkó, Tamás and Csóka, Ádám and Kozma-Bognár, Kristóf and
+             Kovács, András and Farkas, Sándor and
+             Somfalvi-Tóth, Katalin and Keszthelyi, Sándor},
+  title   = {Comparative morphological analysis of yellow-legged hornet
+             ({Vespa velutina nigrithorax}) and European hornet
+             ({Vespa crabro}) based on modern imaging techniques},
+  journal = {Frontiers in Ecology and Evolution},
+  volume  = {13},
+  pages   = {1624744},
+  year    = {2025},
+  doi     = {10.3389/fevo.2025.1624744},
+  url     = {https://doi.org/10.3389/fevo.2025.1624744},
+  note    = {Source des paramètres morphologiques et des performances de
+             vol (vitesse, manœuvrabilité, vol stationnaire) ayant servi
+             au dimensionnement cinématique de la tourelle et au choix
+             du taux de rafraîchissement. Établit également que
+             \emph{V. velutina} surpasse \emph{V. crabro} en vol, et que
+             les deux espèces se distinguent par la coloration — donc
+             mal séparables en monochrome.},
+  file    = {docs/references/articles/Sipos2025_Morphologie_comparee_velutina_crabro_FrontEcolEvol.pdf}
+}
+
+@article{perrard2009colonie,
+  author  = {Perrard, Adrien and Haxaire, Jean and Rortais, Agnès and
+             Villemant, Claire},
+  title   = {Observations on the colony activity of the {Asian} hornet
+             {\emph{Vespa velutina}} {Lepeletier} 1836
+             ({Hymenoptera}: {Vespidae}: {Vespinae}) in {France}},
+  journal = {Annales de la Société Entomologique de France},
+  volume  = {45},
+  number  = {1},
+  pages   = {119--127},
+  year    = {2009},
+  doi     = {10.1080/00379271.2009.10697595},
+  url     = {https://doi.org/10.1080/00379271.2009.10697595},
+  note    = {Cycle et activité de la colonie. Justifie le comportement de
+             « vol stationnaire de guet » devant la ruche, hypothèse
+             opérationnelle sur laquelle repose le compromis à 60~fps.},
+  file    = {docs/references/articles/Perrard2009_Colony_activity_Vespa_velutina_AnnSocEntomolFr.pdf}
+}
+
+@article{lioy2023niche,
+  author  = {Lioy, Simone and Carisio, Luca and Manino, Aulo and
+             Porporato, Marco},
+  title   = {Climatic niche differentiation between the invasive hornet
+             {\emph{Vespa velutina nigrithorax}} and two native hornets in
+             {Europe}, {\emph{Vespa crabro}} and {\emph{Vespa orientalis}}},
+  journal = {Diversity},
+  volume  = {15},
+  number  = {4},
+  pages   = {495},
+  year    = {2023},
+  doi     = {10.3390/d15040495},
+  url     = {https://doi.org/10.3390/d15040495},
+  note    = {Contexte d'invasion et recouvrement de niche avec les espèces
+             natives. Fonde l'exigence éthique de discrimination
+             \emph{velutina} / \emph{crabro} avant tir.},
+  file    = {docs/references/articles/Lioy2023_Climatic_niche_Vespa_velutina_Diversity.pdf}
+}
+
+@article{villemant2015parasites,
+  author  = {Villemant, Claire and Zuccon, Dario and Rome, Quentin and
+             Muller, Franck and Poinar, George O. and Justine, Jean-Lou},
+  title   = {Can parasites halt the invader? {Mermithid} nematodes
+             parasitizing the yellow-legged {Asian} hornet in {France}},
+  journal = {PeerJ},
+  volume  = {3},
+  pages   = {e947},
+  year    = {2015},
+  doi     = {10.7717/peerj.947},
+  url     = {https://doi.org/10.7717/peerj.947},
+  note    = {Revue des moyens de lutte alternatifs (biologiques).
+             Sert de contrepoint à la lutte active : justifie qu'aucune
+             méthode de régulation existante n'est à ce jour
+             suffisamment sélective ni efficace.},
+  file    = {docs/references/articles/Villemant2015_Mermithid_nematodes_Vespa_velutina_PeerJ.pdf}
+}
+
+
+% =====================================================================
+%  2. VISION PAR ORDINATEUR — détection, marqueurs, stéréo, filtrage
+% =====================================================================
+
+@article{garridojurado2014aruco,
+  author  = {Garrido-Jurado, Sergio and
+             Muñoz-Salinas, Rafael and
+             Madrid-Cuevas, Francisco J. and
+             Marín-Jiménez, Manuel J.},
+  title   = {Automatic generation and detection of highly reliable fiducial
+             markers under occlusion},
+  journal = {Pattern Recognition},
+  volume  = {47},
+  number  = {6},
+  pages   = {2280--2292},
+  year    = {2014},
+  doi     = {10.1016/j.patcog.2014.01.005},
+  note    = {Marqueurs ArUco. Solution de repli effectivement déployée en
+             remplacement de VespAI : haut contraste, nativement adaptée
+             aux capteurs monochromes, aucun entraînement requis.}
+}
+
+@article{romeroramirez2018speeded,
+  author  = {Romero-Ramirez, Francisco J. and Muñoz-Salinas, Rafael and
+             Medina-Carnicer, Rafael},
+  title   = {Speeded up detection of squared fiducial markers},
+  journal = {Image and Vision Computing},
+  volume  = {76},
+  pages   = {38--47},
+  year    = {2018},
+  doi     = {10.1016/j.imavis.2018.05.004},
+  note    = {Algorithme de détection accélérée utilisé par le module
+             \texttt{cv::aruco} d'OpenCV.}
+}
+
+@article{zhang2000calibration,
+  author  = {Zhang, Zhengyou},
+  title   = {A flexible new technique for camera calibration},
+  journal = {IEEE Transactions on Pattern Analysis and Machine
+             Intelligence},
+  volume  = {22},
+  number  = {11},
+  pages   = {1330--1334},
+  year    = {2000},
+  doi     = {10.1109/34.888718},
+  note    = {Méthode de calibration implémentée par
+             \texttt{cv::calibrateCamera} / \texttt{cv::stereoCalibrate},
+             utilisée par l'outil \texttt{software/tools/calib\_stereo}.}
+}
+
+@article{kalman1960filter,
+  author  = {Kalman, Rudolf E.},
+  title   = {A new approach to linear filtering and prediction problems},
+  journal = {Journal of Basic Engineering},
+  volume  = {82},
+  number  = {1},
+  pages   = {35--45},
+  year    = {1960},
+  doi     = {10.1115/1.3662552},
+  note    = {Fondement du filtre prédictif de
+             \texttt{PredictiveTurretSight}, qui compense la latence de
+             la chaîne vision $\rightarrow$ CAN $\rightarrow$ asservissement.}
+}
+
+@book{hartley2004multiview,
+  author    = {Hartley, Richard and Zisserman, Andrew},
+  title     = {Multiple View Geometry in Computer Vision},
+  edition   = {2},
+  publisher = {Cambridge University Press},
+  year      = {2004},
+  isbn      = {978-0521540513},
+  doi       = {10.1017/CBO9780511811685},
+  note      = {Référence pour la triangulation stéréo et la géométrie
+               épipolaire mises en œuvre dans
+               \texttt{StereoTriangulator}.}
+}
+
+@misc{opencv,
+  author       = {{OpenCV Team}},
+  title        = {{OpenCV}: Open Source Computer Vision Library},
+  year         = {2026},
+  howpublished = {\url{https://opencv.org}},
+  note         = {Bibliothèque de vision utilisée par \texttt{vision\_node}
+                  (module \texttt{aruco}, calibration, triangulation).}
+}
+
+@misc{ultralytics2020yolov5,
+  author       = {Jocher, Glenn and others},
+  title        = {{YOLOv5} by {Ultralytics}},
+  year         = {2020},
+  howpublished = {\url{https://github.com/ultralytics/yolov5}},
+  doi          = {10.5281/zenodo.3908559},
+  note         = {Architecture sous-jacente de VespAI. Dépôt requis pour
+                  la « chirurgie réseau » 1 canal (désérialisation du
+                  \texttt{.pt}, qui référence le module Python
+                  \texttt{models}).}
+}
+
+@misc{nvidia_tensorrt,
+  author       = {{NVIDIA Corporation}},
+  title        = {{TensorRT} Developer Guide},
+  year         = {2026},
+  howpublished = {\url{https://docs.nvidia.com/deeplearning/tensorrt/}},
+  note         = {Compilation du moteur d'inférence (\texttt{trtexec},
+                  précision FP16) pour l'Orin Nano.}
+}
+
+@misc{v4l2,
+  author       = {{The Linux Kernel Developers}},
+  title        = {{Video for Linux} {API} ({V4L2})},
+  year         = {2026},
+  howpublished = {\url{https://www.kernel.org/doc/html/latest/userspace-api/media/v4l/v4l2.html}},
+  note         = {Interface d'acquisition. Le projet utilise la
+                  répartition mémoire \texttt{mmap} pour la chaîne
+                  « zéro-copie » de \texttt{CameraInterface}.}
+}
+
+
+% =====================================================================
+%  3. COMMANDE MOTEUR — FOC, capteurs, actionneurs
+% =====================================================================
+
+@misc{simplefoc,
+  author       = {Skuric, Antun and Bank, Hasan Sinan and
+                  Unger, Richard and Williams, Owen and
+                  González-Reyes, David},
+  title        = {{SimpleFOC}: A field-oriented control ({FOC}) library
+                  for controlling brushless direct current ({BLDC}) and
+                  stepper motors},
+  journal      = {Journal of Open Source Software},
+  volume       = {7},
+  number       = {74},
+  pages        = {4232},
+  year         = {2022},
+  doi          = {10.21105/joss.04232},
+  howpublished = {\url{https://simplefoc.com}},
+  note         = {Bibliothèque d'asservissement vectoriel utilisée par
+                  \texttt{motion\_node} (version 2.3.2).}
+}
+
+@techreport{st_um2538_focsdk,
+  author      = {{STMicroelectronics}},
+  title       = {{UM2538} — {STM32} {Motor} {Control} {SDK}: {FOC}
+                 algorithm for three-phase low-voltage, low-current
+                 motor evaluation},
+  institution = {STMicroelectronics},
+  year        = {2019},
+  type        = {Manuel utilisateur},
+  url         = {https://www.st.com/resource/en/user_manual/um2538.pdf},
+  note        = {Théorie de la commande vectorielle (transformées de
+                 Clarke et Park) appliquée au matériel ST retenu.},
+  file        = {docs/references/datasheets/ST_UM2538_MC_SDK_FOC.pdf}
+}
+
+@techreport{st_um2415_ihm16m1,
+  author      = {{STMicroelectronics}},
+  title       = {{UM2415} — Getting started with the {X-NUCLEO-IHM16M1}
+                 three-phase brushless motor driver expansion board based
+                 on {STSPIN830} for {STM32} {Nucleo}},
+  institution = {STMicroelectronics},
+  year        = {2018},
+  type        = {Manuel utilisateur},
+  url         = {https://www.st.com/resource/en/user_manual/um2415.pdf},
+  note        = {Étage de puissance (STSPIN830). Deux exemplaires empilés,
+                 cavaliers configurés en FOC 3 shunts. Le remappage du
+                 second étage sur TIM8/ADC2 est décrit dans
+                 \texttt{docs/annexes/cablage.md}.},
+  file        = {docs/references/datasheets/ST_UM2415_X-NUCLEO-IHM16M1.pdf}
+}
+
+@techreport{st_um2505_nucleog431,
+  author      = {{STMicroelectronics}},
+  title       = {{UM2505} — {STM32G4} {Nucleo-64} boards ({MB1367})},
+  institution = {STMicroelectronics},
+  year        = {2019},
+  type        = {Manuel utilisateur},
+  url         = {https://www.st.com/resource/en/user_manual/um2505.pdf},
+  note        = {Carte \texttt{motion\_node} (NUCLEO-G431RB). C'est ce
+                 document qui établit que \texttt{PA2} est câblée sur la
+                 liaison série virtuelle du ST-LINK — origine du conflit
+                 décrit dans « Difficultés techniques ».},
+  file        = {docs/references/datasheets/ST_UM2505_NUCLEO-G431RB.pdf}
+}
+
+@techreport{ams_as5048a,
+  author      = {{ams AG}},
+  title       = {{AS5048A} — 14-bit rotary position sensor with digital
+                 {SPI} and {PWM} output},
+  institution = {ams AG},
+  year        = {2018},
+  type        = {Datasheet},
+  url         = {https://ams.com/as5048a},
+  note        = {Encodeur magnétique absolu. Résolution 14 bits, soit
+                 $360/2^{14} \approx 0{,}022^\circ$ : borne théorique de
+                 précision de la tourelle.}
+}
+
+
+% =====================================================================
+%  4. CAPTEURS ET CALCULATEUR — vision embarquée
+% =====================================================================
+
+@techreport{omnivision_ov9281,
+  author      = {{OmniVision Technologies}},
+  title       = {{OV9281} — 1{MP} high-performance global shutter {CMOS}
+                 image sensor},
+  institution = {OmniVision Technologies},
+  year        = {2017},
+  type        = {Datasheet},
+  note        = {Capteur monochrome à obturateur global 1280$\times$800.
+                 Le choix du monochrome est imposé par l'absence de
+                 capteur trichrome à obturateur global abordable — c'est
+                 la cause racine de l'incompatibilité avec VespAI.},
+  file        = {docs/references/datasheets/Arducam_OV9281_MIPI_datasheet.pdf}
+}
+
+@techreport{arducam_uc788,
+  author      = {{Arducam}},
+  title       = {{UC-788} Rev.{B} — {OV9281} {MIPI} camera module carrier
+                 board},
+  institution = {Arducam},
+  year        = {2023},
+  type        = {Datasheet},
+  url         = {https://www.arducam.com/},
+  note        = {Carte porteuse assurant la compatibilité de l'OV9281 avec
+                 l'écosystème NVIDIA Jetson. Support du déclenchement
+                 externe (\emph{external trigger}) — voir l'étude dédiée
+                 \texttt{Etude\_IA\_Arducam\_UC788\_Trigger\_Externe.pdf}.},
+  file        = {docs/references/datasheets/Arducam_UC-788_RevB_OV9281.pdf}
+}
+
+@techreport{nvidia_orin_nano_carrier,
+  author      = {{NVIDIA Corporation}},
+  title       = {{Jetson} {Orin} {Nano} {Developer} {Kit} Carrier Board
+                 Specification ({SP-11324-001}, v1.3)},
+  institution = {NVIDIA Corporation},
+  year        = {2023},
+  type        = {Spécification},
+  url         = {https://developer.nvidia.com/embedded/downloads},
+  note        = {Brochage du connecteur 40 broches. Source des broches
+                 PWM matérielles utilisées pour la synchronisation stéréo,
+                 et des broches CAN0 (\texttt{PAA0}/\texttt{PAA1}) restées
+                 non réclamées par le \emph{pinmux}.},
+  file        = {docs/references/datasheets/NVIDIA_Jetson_Orin_Nano_DevKit_Carrier_SP-11324-001_v1.3.pdf}
+}
+
+@misc{nvidia_jetpack,
+  author       = {{NVIDIA Corporation}},
+  title        = {{JetPack} {SDK} 6.2 — {Jetson} {Linux} {Developer}
+                  {Guide}},
+  year         = {2025},
+  howpublished = {\url{https://docs.nvidia.com/jetson/}},
+  note         = {Version de l'environnement effectivement déployée.
+                  Le noyau doit être remplacé par le noyau Arducam :
+                  voir \texttt{docs/annexes/jetson\_setup.md}.}
+}
+
+
+% =====================================================================
+%  5. COMMUNICATION — bus CAN
+% =====================================================================
+
+@techreport{iso11898_1,
+  author      = {{International Organization for Standardization}},
+  title       = {{ISO} 11898-1:2015 — Road vehicles — {Controller} area
+                 network ({CAN}) — {Part} 1: {Data} link layer and
+                 physical signalling},
+  institution = {ISO},
+  year        = {2015},
+  url         = {https://www.iso.org/standard/63648.html},
+  note        = {Couche liaison. L'arbitrage bit à bit non destructif
+                 fonde la hiérarchie de priorités du protocole VESPA :
+                 \texttt{FIRE\_CMD} porte l'identifiant le plus faible
+                 (0x010), donc la priorité absolue.}
+}
+
+@misc{socketcan,
+  author       = {{The Linux Kernel Developers}},
+  title        = {{SocketCAN} — {Controller} {Area} {Network} on {Linux}},
+  year         = {2026},
+  howpublished = {\url{https://www.kernel.org/doc/html/latest/networking/can.html}},
+  note         = {Pile CAN côté Jetson (\texttt{vision\_can.cpp}).
+                  L'interface virtuelle \texttt{vcan0} a permis de valider
+                  le protocole de bout en bout malgré l'indisponibilité du
+                  bus physique.}
+}
+
+
+% =====================================================================
+%  6. OPTIQUE ET SÉCURITÉ LASER
+% =====================================================================
+
+@techreport{iec60825,
+  author      = {{International Electrotechnical Commission}},
+  title       = {{IEC} 60825-1:2014 — Safety of laser products — {Part} 1:
+                 {Equipment} classification and requirements},
+  institution = {IEC},
+  year        = {2014},
+  url         = {https://webstore.iec.ch/publication/3587},
+  note        = {Norme de classification. L'effecteur envisagé
+                 (diode multiwatt, bleu) relève de la \textbf{Classe 4} :
+                 dangereux en réflexion diffuse, risque d'incendie.
+                 Conditionne tout le dispositif d'\emph{interlock}.}
+}
+
+@book{hecht2016optics,
+  author    = {Hecht, Eugene},
+  title     = {Optics},
+  edition   = {5},
+  publisher = {Pearson},
+  year      = {2016},
+  isbn      = {978-0133977226},
+  note      = {Relations de conjugaison de Descartes utilisées pour
+               établir la loi de commande du mécanisme de collimation
+               dynamique (deux lentilles minces convergentes).}
+}
+
+@book{siegman1986lasers,
+  author    = {Siegman, Anthony E.},
+  title     = {Lasers},
+  publisher = {University Science Books},
+  year      = {1986},
+  isbn      = {978-0935702118},
+  note      = {Divergence et irradiance d'un faisceau laser. Support du
+               tracé de densité de puissance le long de l'axe optique
+               (\texttt{simulation/optique/Laser\_Optics\_v1.m}) et du
+               calcul du diamètre au point focal.}
+}
+
+
+% =====================================================================
+%  7. TRAVAUX ANTÉRIEURS ET DOCUMENTS INTERNES
+% =====================================================================
+
+@mastersthesis{cosson2025vespa_mk1,
+  author  = {Cosson, Lucas and Grimal, Hugo},
+  title   = {Conception d'un dispositif autonome de lutte contre le frelon
+             asiatique — prototype mk.1},
+  school  = {ENSIL-ENSCI, Université de Limoges},
+  year    = {2025},
+  type    = {Projet de fin d'études},
+  note    = {Itération précédente : détection YOLOv8 hors ligne, tourelle
+             à moteurs pas-à-pas Nema 17 pilotée par Arduino Uno, diode
+             laser récréative de quelques milliwatts. Ce sont les limites
+             de ce prototype — décrochage, jitter, dérive cumulative —
+             qui ont été caractérisées puis levées par le mk.2.
+             Encadrant : M. Michel Ousset.}
+}
+
+@mastersthesis{delmas2026vespa_mk2,
+  author  = {Delmas, Antonin and Desmedt, Clément and Gilson, Clément},
+  title   = {Tourelle optronique de suivi prédictif par stéréo-vision à
+             neutralisation laser dynamique},
+  school  = {ENSIL-ENSCI, Université de Limoges},
+  year    = {2026},
+  type    = {Projet de fin d'études (MIX 5)},
+  month   = {3},
+  note    = {Rapport de soutenance du prototype mk.2 (16 mars 2026).
+             Encadrant : Michel Ousset ; enseignant : Thierry Cortier.
+             Conservé tel quel dans
+             \texttt{docs/Rapport\_PFE\_2026\_VESPA.pdf}.},
+  file    = {docs/Rapport_PFE_2026_VESPA.pdf}
+}
