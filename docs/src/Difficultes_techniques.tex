@@ -1,0 +1,607 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage{vespa_style}
+
+\begin{document}
+
+\vespatitlepage
+  {Difficultés techniques}
+  {Verrous levés et verrous reportés}
+  {Document de clôture — juillet 2026\\
+   Rédigé rétrospectivement à partir du code, des archives de conversation,\\
+   des fichiers de configuration du Jetson et des relevés de banc.}
+
+\tableofcontents
+\newpage
+
+% =====================================================================
+\section{Comment lire ce document}
+
+Ce document recense les obstacles \textbf{non triviaux} rencontrés au cours du projet
+\vespa{} — ceux dont la solution n'était ni évidente ni documentée, et ceux qui n'ont pas
+été résolus.
+
+Il ne s'agit pas d'un journal de bord. Un bug de compilation n'y figure pas ; un bug qui a
+coûté une semaine, faussé une mesure ou contraint une décision d'architecture, oui.
+
+\begin{note}[Convention]
+\textbf{\textcolor{vespagreen}{LEVÉ}} — le verrou a été franchi. La cause racine et le
+correctif sont donnés, et le correctif est dans le dépôt.
+
+\textbf{\textcolor{vespared}{REPORTÉ}} — le verrou est ouvert. L'état exact des tentatives
+est donné, ainsi que la piste jugée la plus prometteuse. \textbf{C'est là que doit
+commencer toute reprise du projet.}
+\end{note}
+
+\begin{avertissement}[À lire avant de reprendre le matériel]
+Plusieurs de ces verrous ne sont \emph{pas visibles dans le code}. Ils sont dans le
+silicium, dans le brochage de la carte, ou dans un fichier de configuration du noyau.
+Un repreneur qui lirait uniquement les sources rencontrerait à nouveau, une par une,
+les mêmes impasses. C'est précisément la raison d'être de ce document.
+\end{avertissement}
+
+Une remarque transverse, et elle est structurante. Ce projet a été développé avec une
+assistance forte de modèles de langage. Cette assistance a été décisive sur le volume de
+code produit. Mais \textbf{sur les verrous matériels, elle a été prise en défaut de manière
+répétée}, avec une grande assurance de façade. Les erreurs de diagnostic les plus coûteuses
+du projet sont des hypothèses d'IA plausibles, bien argumentées, et fausses — qui n'ont été
+écartées que par la mesure. La section~\ref{sec:ia} en fait le bilan explicite, car c'est
+une leçon de méthode réutilisable.
+
+% =====================================================================
+\newpage
+\section{Verrous levés}
+
+% ---------------------------------------------------------------------
+\subsection{Faire cohabiter deux caméras MIPI à adresse I\textsuperscript{2}C identique}
+
+\begin{verroulevé}{Double flux OV9281 simultané}
+\textbf{Symptôme.} Les deux modules Arducam OV9281 portent la \emph{même} adresse
+I\textsuperscript{2}C, figée en dur dans le silicium du capteur. La documentation
+courante conclut qu'un multiplexeur I\textsuperscript{2}C matériel est nécessaire pour en
+exploiter deux simultanément.
+
+\textbf{Cause racine.} L'adresse est bien unique par capteur, mais les deux caméras ne
+partagent pas le même bus : chaque port CSI du Jetson dispose de son propre bus
+I\textsuperscript{2}C. Le conflit d'adresse est donc \emph{apparent}, pas réel — à
+condition que le noyau instancie bien un sous-périphérique par port.
+
+\textbf{Correctif.} Noyau Arducam personnalisé + \emph{overlay} d'arbre de périphériques
+dédié au mode double :
+\fichier{tegra234-p3767-camera-p3768-arducam-dual.dtbo}, chargé au démarrage
+(voir \fichier{jetson/extlinux.conf.reference}). Les deux capteurs apparaissent alors comme
+deux n\oe uds \fichier{/dev/video*} indépendants, chacun avec son propre sous-périphérique
+de contrôle. Aucun multiplexeur matériel n'est nécessaire.
+\end{verroulevé}
+
+C'est le résultat que le rapport de soutenance qualifiait d'« inédit ». La formulation est
+excessive — la solution est une conséquence de l'architecture du Tegra — mais elle a bien
+levé un blocage réputé rédhibitoire, et elle a économisé un composant.
+
+% ---------------------------------------------------------------------
+\subsection{Synchroniser les deux capteurs à quelques microsecondes près}
+
+\begin{verroulevé}{Déclenchement matériel commun par PWM du Tegra}
+\textbf{Symptôme.} La triangulation stéréo est fausse dès que les deux images ne sont pas
+prises au même instant. Sur une cible mobile, un déphasage de quelques millisecondes
+suffit à déplacer le point 3D reconstruit de plusieurs centimètres. Or Linux n'est pas un
+RTOS : un déclenchement logiciel des deux caméras est soumis à l'ordonnanceur et dérive.
+
+\textbf{Cause racine.} Toute synchronisation pilotée par le CPU est structurellement
+inadéquate. Il faut sortir la génération d'horloge du domaine logiciel.
+
+\textbf{Correctif.} Les \textbf{deux} caméras sont forcées en mode esclave
+(\fichier{trigger\_mode=1}) et reçoivent le \emph{même} front de déclenchement, généré par
+le \textbf{PWM matériel du Tegra} — indépendant de la charge CPU :
+
+\begin{lstlisting}[language=bash]
+/sys/class/pwm/pwmchip3/pwm0/period     = 16666666  ns  -> 60 Hz
+/sys/class/pwm/pwmchip3/pwm0/duty_cycle =  1666666  ns  -> 10 %
+\end{lstlisting}
+
+La simultanéité est ainsi vraie \emph{par construction} : les deux capteurs exposent sur le
+même front électrique. Implémentation : \fichier{HardwareSyncController.cpp}
+(\texttt{armTrigger}, \texttt{forceSlaveMode}).
+
+\textbf{Résultat mesuré.} Dérive inter-caméras de \textbf{0,000 ms}. Un garde-fou logiciel
+subsiste dans \texttt{captureSynchronizedPair()} : toute paire dont les horodatages
+s'écartent de plus de 5~ms est rejetée et resynchronisée par consommation de la file la
+plus en retard.
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{Les réglages optiques ne s'appliquaient pas}
+
+\begin{verroulevé}{Fenêtre d'application des contrôles V4L2}
+\textbf{Symptôme.} Les réglages d'exposition et de gain écrits dans le JSON étaient
+silencieusement ignorés par le capteur. Aucune erreur, aucun code de retour :
+simplement, l'image ne changeait pas.
+
+\textbf{Cause racine — double.}
+\begin{enumerate}[nosep]
+  \item \textbf{Fenêtre temporelle.} Les registres actifs du capteur ne « écoutent » pas
+        tant que ses PLL ne sont pas stabilisées. Pousser les réglages avant que le flux
+        ne tourne revient à écrire dans le vide.
+  \item \textbf{Nom de contrôle.} Le pilote V4L2 attend strictement
+        \fichier{analogue\_gain} (orthographe britannique). Toute variante
+        (\fichier{gain}, \fichier{analog\_gain}) échoue \emph{en silence}. L'exposition
+        fonctionnait, le gain non — ce qui rendait le diagnostic contre-intuitif.
+\end{enumerate}
+
+\textbf{Correctif.} Séquence d'initialisation stricte dans \texttt{initializeRig()} :
+démarrer les flux $\rightarrow$ \textbf{attendre 500~ms} $\rightarrow$ charger le JSON
+$\rightarrow$ appliquer $\rightarrow$ forcer le mode esclave $\rightarrow$ purger les files.
+Le ticket de dette technique correspondant est \textbf{clos}.
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{La console série se taisait dès que le potentiomètre était branché}
+
+\begin{verroulevé}{Conflit \broche{PA2} — potentiomètre \emph{vs} USART2\_TX}
+\textbf{Symptôme.} Sur le \fichier{motion\_node}, brancher le potentiomètre de réglage fin
+de l'axe \textsc{pan} rendait la console série muette ou illisible. Aucun lien apparent
+entre les deux.
+
+\textbf{Cause racine.} Le shield X-NUCLEO-IHM16M1 câble son entrée « SPEED »
+(potentiomètre) sur \broche{PA2}. Mais sur la carte NUCLEO-G431RB, \broche{PA2} est
+\textbf{déjà câblée sur \texttt{USART2\_TX}}, c'est-à-dire sur le port COM virtuel du
+ST-LINK. Y injecter une tension analogique revient à court-circuiter la sortie série.
+
+\textbf{Correctif.} Potentiomètre \textsc{pan} déplacé sur \broche{PB14}
+(\fichier{pinout.h}). Le fichier historique \fichier{STM32\_WiringManifest.txt} indique
+encore \broche{PA2} : \textbf{il est faux sur ce point}, et
+\fichier{docs/annexes/cablage.md} le corrige.
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{Le SPI des encodeurs pouvait mourir sans raison}
+
+\begin{verroulevé}{\broche{PA4} : NSS matériel \emph{vs} retour de courant}
+\textbf{Cause racine.} \broche{PA4} est simultanément la broche \texttt{SENSEW} du moteur 1
+(retour de courant phase W) et le \textbf{NSS matériel du SPI1}. Or SPI1 porte les deux
+encodeurs AS5048A, dont dépend tout l'asservissement. Un NSS matériel laissé flottant peut
+faire basculer le périphérique SPI en mode esclave et interrompre la lecture des encodeurs.
+
+\textbf{Correctif — un arbitrage, pas une solution.} \broche{PA4} est maintenue haute et
+réservée au SPI. \textbf{Le retour de courant de la phase W du moteur 1 est sacrifié.}
+C'est acceptable ici : la FOC de SimpleFOC reconstruit la phase manquante
+($i_W = -i_U - i_V$), et surtout l'asservissement actuel est en position sur encodeur, sans
+boucle de courant. \textbf{Un repreneur qui voudrait activer la mesure de courant devra
+rouvrir cet arbitrage.}
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{Deux programmes se disputaient le bus I\textsuperscript{2}C}
+
+\begin{verroulevé}{Verrou d'exclusion mutuelle matériel}
+\textbf{Symptôme.} Lancer un outil Python de calibration pendant que le n\oe ud C++ tournait
+corrompait les réglages du capteur, voire figeait le flux.
+
+\textbf{Cause racine.} Les deux processus écrivent sur les mêmes sous-périphériques
+I\textsuperscript{2}C. Rien, au niveau du système, ne les en empêche.
+
+\textbf{Correctif.} Verrou exclusif \texttt{flock} sur \fichier{/tmp/vespa\_hardware.lock},
+pris au démarrage de \texttt{HardwareSyncController} (\texttt{acquireHardwareLock()}).
+Le second processus \textbf{refuse de démarrer} avec un message explicite.
+
+\textbf{Ce n'est pas un bug :} lancer le n\oe ud de vision et un outil Python simultanément
+échoue \emph{volontairement}.
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{\texttt{jetson-io.py} détruisait la configuration des caméras}
+
+\begin{verroulevé}{Abandon de l'outil NVIDIA au profit d'un arbre de périphériques maîtrisé}
+\textbf{Symptôme.} Impossible d'avoir \emph{en même temps} le pilote caméra et le PWM
+matériel. Configurer l'un via \fichier{jetson-io.py} cassait l'autre.
+
+\textbf{Cause racine.} \fichier{jetson-io.py} régénère et réapplique les \emph{overlays}
+d'arbre de périphériques de façon globale : il écrase les configurations de multiplexage
+existantes au lieu de les compléter.
+
+\textbf{Correctif.} L'outil est \textbf{proscrit}. La configuration matérielle est gérée
+par des \emph{overlays} explicites, versionnés, chargés depuis
+\fichier{/boot/extlinux/extlinux.conf}. Les fichiers sont conservés dans
+\fichier{jetson/} (voir \fichier{docs/annexes/jetson\_setup.md}).
+
+\begin{avertissement}[Ne pas lancer \texttt{jetson-io.py}]
+Sur une machine reconstruite selon ce dépôt, exécuter \fichier{jetson-io.py} et sauvegarder
+\textbf{cassera la synchronisation stéréo}. L'\emph{overlay} PWM
+(\fichier{jetson-io-hdr40-user-custom.dtbo}, broches 32 et 33) doit être préservé tel quel.
+\end{avertissement}
+\end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{Valider le protocole CAN sans bus CAN}
+
+\begin{verroulevé}{Bus virtuel \texttt{vcan0}}
+Le bus physique n'ayant jamais fonctionné (voir §\ref{sec:can}), la totalité de la couche
+protocolaire a été validée sur une interface CAN \textbf{virtuelle} :
+
+\begin{lstlisting}[language=bash]
+sudo modprobe vcan
+sudo ip link add dev vcan0 type vcan && sudo ip link set up vcan0
+candump vcan0
+\end{lstlisting}
+
+Les trames \texttt{TARGET\_VEC} (\texttt{0x020}, 7 octets) et \texttt{FIRE\_CMD}
+(\texttt{0x010}) ont été observées, correctement sérialisées, à la cadence attendue.
+\textbf{La sérialisation, les identifiants, les priorités et la logique applicative sont
+donc démontrés corrects} ; seule la couche physique est en défaut. C'est une distinction
+importante pour le repreneur : \textbf{il n'y a pas de bug à chercher dans le protocole.}
+\end{verroulevé}
+
+% =====================================================================
+\newpage
+\section{Verrous reportés}
+
+% ---------------------------------------------------------------------
+\subsection{Le bus CAN physique : les broches n'ont jamais été réclamées}
+\label{sec:can}
+
+\begin{verroureporte}{CAN0 du Jetson — \texttt{pinmux} non réclamé}
+\textbf{C'est le verrou bloquant du projet.} Les deux n\oe uds fonctionnent
+individuellement. Ils n'ont jamais communiqué \emph{sur du cuivre}.
+\end{verroureporte}
+
+\paragraph{Symptôme.} L'interface \fichier{can0} n'apparaît jamais. La vérification du
+multiplexeur ne renvoie \textbf{rien} :
+
+\begin{lstlisting}[language=bash]
+$ sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
+$          # <- aucune sortie : les broches PAA ne sont meme pas listees
+\end{lstlisting}
+
+\paragraph{Le piège de brochage.} Sur le Tegra 234 :
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Broches SoC} & \textbf{Contrôleur} & \textbf{En-tête 40 broches} \\
+\midrule
+\broche{PAA0} / \broche{PAA1} & \textbf{CAN0} & broche 31 (TX) / broche 29 (RX) \\
+\broche{PAA2} / \broche{PAA3} & CAN1 & — \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent
+Assigner la fonction \texttt{can0} aux broches \broche{PAA2}/\broche{PAA3} revient à
+demander au silicium de router \emph{CAN0 sur les broches physiques de CAN1}. Le pilote
+\texttt{pinctrl} détecte l'incohérence et \textbf{s'arrête}, ce qui explique que les broches
+ne soient plus listées du tout.
+
+\paragraph{État final laissé sur la machine.} L'\emph{overlay} chargé au démarrage est
+\fichier{/boot/can0-pinmux.dtbo}, dont l'en-tête interne annonce
+« \texttt{CAN0 Hardware Override V5} » — cinquième itération. Il déclare bien les n\oe uds
+corrects (\texttt{can0\_dout\_paa0}, \texttt{can0\_din\_paa1}, fonction \texttt{can0}) et
+tente de neutraliser les n\oe uds \texttt{paa2}/\texttt{paa3}. \textbf{Il n'a pas suffi.}
+
+\begin{avertissement}[Une hypothèse répandue — et fausse]
+La dernière piste explorée avant l'arrêt du projet attribuait la panne à un \emph{overlay}
+\fichier{jetson-io-hdr40-user-custom.dtbo} « empoisonné », qui aurait contenu une mauvaise
+affectation CAN sur \broche{PAA2}/\broche{PAA3}.
+
+\textbf{Cette hypothèse est démentie par le fichier lui-même.} Son inspection (juillet 2026)
+montre qu'il ne configure \emph{que} deux broches :
+\texttt{hdr40-pin32}~$\rightarrow$~\texttt{soc\_gpio19\_pg6} et
+\texttt{hdr40-pin33}~$\rightarrow$~\texttt{soc\_gpio21\_ph0} — les broches du PWM de
+synchronisation. \textbf{Il ne contient aucune configuration CAN.}
+
+Ne pas perdre de temps à « réparer » ce fichier : il n'est pas en cause, et le modifier
+casserait la synchronisation stéréo. La cause est ailleurs.
+\end{avertissement}
+
+\paragraph{Piste recommandée pour la reprise.} Par ordre de coût croissant :
+\begin{enumerate}
+  \item \textbf{Vérifier le domaine de \emph{pinmux}.} Les broches \broche{PAA} du Tegra
+        appartiennent au contrôleur \textbf{AON} (\emph{always-on}), distinct du
+        \emph{pinmux} principal. Un \emph{overlay} qui cible le mauvais contrôleur n'a
+        aucun effet — et c'est cohérent avec l'absence totale des broches dans
+        \texttt{debugfs}. \textbf{C'est la piste la plus probable.} Vérifier que
+        l'\emph{overlay} cible bien \texttt{pinmux\_aon} et non \texttt{pinmux}.
+  \item \textbf{Confirmer que le module noyau \texttt{mttcan} se charge}
+        (\texttt{modprobe mttcan}, puis \texttt{dmesg | grep -i can}). Le contrôleur CAN du
+        Tegra en dépend.
+  \item \textbf{Contourner le SoC.} Solution de repli assumée et rapide : un contrôleur CAN
+        \textbf{externe sur SPI} (MCP2515 ou équivalent). On abandonne le CAN natif du
+        Tegra, mais on obtient un bus fonctionnel sans livrer bataille au \emph{pinmux}.
+        \textbf{Si la reprise est sous contrainte de temps, commencer par là.}
+\end{enumerate}
+
+\paragraph{Ce que ce verrou n'est pas.} Il n'est ni logiciel, ni protocolaire. Le câblage
+(WCMCU-230 / SN65HVD230, 3,3~V, broches 29/31, masse commune, terminaison 120~$\Omega$) est
+correct et documenté. Le code est validé sur \texttt{vcan0}. \textbf{Seul le routage des
+broches est en cause.}
+
+% ---------------------------------------------------------------------
+\newpage
+\subsection{Reconnaissance biologique : VespAI est en couleur, nos capteurs non}
+
+\begin{verroureporte}{Incompatibilité VespAI / capteur monochrome}
+\textbf{Le système ne sait pas reconnaître un frelon.} Il suit un marqueur ArUco.
+\end{verroureporte}
+
+\paragraph{L'enchaînement des contraintes.} Ce verrou n'est pas une erreur : c'est une
+cascade logique dont chaque maillon est justifié, et dont le résultat est une impasse.
+
+\begin{enumerate}
+  \item Le flou de mouvement détruit la détection $\rightarrow$ il faut un
+        \textbf{obturateur global}.
+  \item Aucun capteur \textbf{trichrome} à obturateur global n'existe à un prix accessible
+        $\rightarrow$ le capteur sera \textbf{monochrome} (OV9281).
+  \item Le modèle VespAI~\cite{osheawheller2024vespai} est entraîné sur des images
+        \textbf{RGB} $\rightarrow$ \textbf{incompatible}.
+\end{enumerate}
+
+\paragraph{Ce qui a été tenté.} Une « chirurgie réseau » sur les poids pré-entraînés, sans
+réentraînement. L'idée est mathématiquement exacte : si l'on duplique le canal gris sur les
+trois canaux RGB, la première convolution calcule
+\[
+  \text{sortie} = I_R W_R + I_G W_G + I_B W_B
+  = I_{\text{gris}}\,(W_R + W_G + W_B),
+\]
+donc \textbf{sommer les poids de la première couche sur la dimension canal} produit un
+modèle à 1 canal \emph{strictement équivalent}, sans perte, sans jeu de données, sans
+entraînement.
+
+\begin{lstlisting}[language=Python]
+new_weights = torch.sum(old_weights, dim=1, keepdim=True)  # (out,3,k,k) -> (out,1,k,k)
+first_conv_layer.weight      = nn.Parameter(new_weights)
+first_conv_layer.in_channels = 1
+\end{lstlisting}
+
+\paragraph{Pourquoi cela a échoué quand même.} La transformation est exacte, et le modèle
+obtenu tourne vite (compilé en TensorRT FP16, entrée native
+$1{,}280 \times 800$ — les deux dimensions étant multiples de 32, aucun redimensionnement
+n'est requis, donc pas de recours au VIC). \textbf{Mais l'équivalence mathématique ne crée
+pas d'information.} Le modèle reste entraîné sur des statistiques de couleur : il détecte des
+frelons \emph{imprimés sur papier blanc}, et échoue en conditions réelles, avec des faux
+positifs massifs. Surtout, la distinction \emph{V.~velutina} / \emph{V.~crabro} — l'exigence
+éthique centrale du projet — repose largement sur la \textbf{coloration}
+\cite{sipos2025morphologie} : elle est \textbf{structurellement impossible} en monochrome à
+partir d'un modèle couleur.
+
+\paragraph{Décision.} À trois semaines de la soutenance, le réentraînement complet
+(estimé 1,5 à 2,5 semaines, sans garantie de résultat, le jeu de données n'étant pas public)
+a été jugé trop risqué. \textbf{Repli assumé sur un marqueur ArUco}
+\cite{garridojurado2014aruco} : haut contraste, natif en niveaux de gris, aucun
+entraînement, pose 3D exacte. Le marqueur \textbf{tient lieu de cible} et permet de valider
+toute la chaîne aval (triangulation, prédiction, asservissement) — qui est, elle,
+indépendante de la nature de la cible.
+
+\begin{note}[Pour la reprise]
+La voie n'est pas la « chirurgie réseau ». C'est la \textbf{constitution d'un jeu de données
+monochrome} (images issues de l'OV9281 lui-même, en conditions réelles) et le
+réentraînement d'un détecteur dessus. Tant que la discrimination inter-espèces ne sera pas
+rétablie, \textbf{le système ne doit pas tirer} : il ne sait pas distinguer une espèce
+invasive d'une espèce protégée.
+\end{note}
+
+% ---------------------------------------------------------------------
+\subsection{Le n\oe ud de coordination, le watchdog, et le tir}
+
+\begin{verroureporte}{Watchdog non implémenté — laser jamais mis sous tension}
+Le \fichier{coordination\_node} (ESP32) \textbf{n'existe pas}. Il est spécifié — ses trames
+CAN sont définies (\texttt{FIRE\_CMD}, \texttt{POS\_COORD}, \texttt{HB\_COORD}) — mais
+aucune ligne de code ne l'implémente.
+\end{verroureporte}
+
+Or ce n\oe ud porte trois fonctions, dont une est une condition de sécurité :
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Fonction} & \textbf{État} \\
+\midrule
+Collimation dynamique & Loi de commande établie, mécanisme spécifié, jamais assemblé \\
+Séquence de tir & Non implémentée \\
+\textbf{Watchdog} & \textbf{Non implémenté} — \emph{condition sine qua non du tir} \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{Conséquence, et elle est délibérée.} Le watchdog est le mécanisme qui surveille
+les \emph{heartbeats} de tous les n\oe uds et coupe l'alimentation générale en cas de
+défaut ou de silence. Sans lui, \textbf{rien ne garantit l'extinction du laser si un n\oe ud
+se fige}.
+
+\begin{avertissement}[La diode laser n'a jamais été alimentée]
+Ce n'est pas un retard : c'est un \textbf{refus}. Mettre sous tension une diode de
+\textbf{Classe 4} (voir \fichier{docs/annexes/securite\_laser.md}) sans \emph{interlock}
+fonctionnel aurait été une faute. Aucun tir n'a été effectué, et \textbf{aucun ne doit
+l'être} tant que le watchdog n'est pas opérationnel et testé.
+\end{avertissement}
+
+\paragraph{Note de conception.} Le watchdog est prévu \emph{dans le n\oe ud de tir} —
+c'est-à-dire au plus près de l'organe dangereux, sur un c\oe ur CPU dédié. C'est le bon
+choix : un superviseur qui dépendrait du réseau pour couper le courant serait vulnérable à
+la panne même qu'il doit traiter. La coupure est \textbf{matérielle} (alimentation
+générale), l'inhibition logicielle du tir n'intervenant que pendant le temps de décharge des
+condensateurs.
+
+% ---------------------------------------------------------------------
+\subsection{La profondeur de champ létale : un résultat inattendu}
+
+\begin{verroureporte}{Collimation dynamique — jamais assemblée ni étalonnée}
+\end{verroureporte}
+
+Le mécanisme de collimation dynamique vise à \textbf{dégrader volontairement} le faisceau
+partout ailleurs qu'au point d'impact, afin de réduire la dangerosité intrinsèque du
+dispositif. Deux lentilles : \textbf{L1} (fournie avec le module, rapprochée de la source
+pour la faire \emph{diverger}) et \textbf{L2} (longue focale, mobile, qui refocalise à une
+distance commandée).
+
+La loi de commande a été établie analytiquement par les relations de conjugaison de
+Descartes, en éliminant la focale inconnue $f_1$ au profit de grandeurs mesurables
+(demi-divergence $\theta$, diamètre $D_{L2}$ du faisceau sur la lentille mobile) :
+\[
+  x_{\text{cible}} \;=\; x_{L2} \;+\;
+  \frac{f_2 \cdot \dfrac{D_{L2}}{2\tan\theta}}
+       {\dfrac{D_{L2}}{2\tan\theta} - f_2}
+\]
+Cette relation, quadratique, est approximée par un polynôme à $10^{-4}$~mm près — plus
+rapide à évaluer sur microcontrôleur.
+
+\paragraph{Le résultat qu'il faut retenir.} Le tracé de densité de puissance
+(\fichier{simulation/optique/Laser\_Optics\_v1.m}) donne deux enseignements
+\textbf{opposés}, et c'est le second qui compte :
+
+\begin{itemize}
+  \item \textcolor{vespagreen}{\textbf{Bonne nouvelle.}} Le seuil d'embrasement de matières
+        sèches n'est franchi que sur $\approx 50$~mm de part et d'autre de la cible. Un tir
+        manqué venant frapper le sol présente donc un risque d'incendie
+        \textbf{limité}. L'objectif du mécanisme est atteint.
+  \item \textcolor{vespared}{\textbf{Mauvaise nouvelle, et elle domine.}} Le seuil de
+        dangerosité \textbf{oculaire} reste dépassé sur près de \textbf{200~mètres}. La
+        collimation dynamique \textbf{ne rend pas le dispositif sûr} : elle réduit le risque
+        d'incendie, pas le risque oculaire.
+\end{itemize}
+
+\begin{avertissement}
+Il serait dangereux de conclure de ce mécanisme que le système est « moins dangereux ».
+Il ne l'est pas pour l'\oe il. La collimation dynamique est une mesure de mitigation
+\textbf{partielle}, en aucun cas un substitut aux protections (lunettes, \emph{interlock},
+confinement).
+\end{avertissement}
+
+% ---------------------------------------------------------------------
+\subsection{Verrous mineurs et dette technique}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}p{4.2cm}Xl@{}}
+\toprule
+\textbf{Sujet} & \textbf{Description} & \textbf{État} \\
+\midrule
+Appels \texttt{std::system} &
+Le pilotage du PWM passe par des appels shell (\texttt{echo > /sys/class/pwm/...}).
+Coûteux et fragile. À remplacer par des écritures \texttt{sysfs} directes en C++. &
+Ouvert \\
+\addlinespace
+Chemins absolus &
+Les \texttt{\#define} de scripts PWM sont des chemins absolus : déplacer le dépôt casse la
+compilation. À rendre relatifs ou configurables. &
+Ouvert \\
+\addlinespace
+Échelle d'exposition &
+L'OV9281 n'utilise pas le même calcul de temps-ligne en mode maître et en mode
+déclenchement externe. L'outil \fichier{app\_EG.py} calibre donc dans un régime différent
+de celui du \emph{pipeline} C++ : les valeurs ne correspondent pas 1:1. &
+Ouvert \\
+\addlinespace
+Timing des contrôles V4L2 &
+Attendre que le flux tourne avant de pousser les réglages. &
+\textcolor{vespagreen}{\textbf{Clos}} \\
+\addlinespace
+Suivi multi-cibles &
+Un seul filtre de Kalman. Une nuée de frelons n'est pas gérée : ni association de données,
+ni priorisation. &
+Ouvert \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+% =====================================================================
+\newpage
+\section{Ce que l'assistance par IA a coûté, et ce qu'elle a rapporté}
+\label{sec:ia}
+
+Cette section est inhabituelle dans un document technique. Elle est ici parce que le projet
+a été, de bout en bout, co-développé avec des modèles de langage, et que \textbf{le bilan
+n'est pas uniforme}. Un repreneur qui adopterait la même méthode doit savoir où elle porte
+et où elle nuit.
+
+\paragraph{Ce qui a très bien fonctionné.} La production de code. Le volume de logiciel écrit
+— chaîne V4L2 zéro-copie, sérialisation CAN, FOC, triangulation, filtre de Kalman, outils
+web de calibration — est hors de portée de trois étudiants sur la durée impartie sans cette
+assistance. Le rapport de soutenance le dit, et c'est exact.
+
+\paragraph{Ce qui a coûté cher.} \textbf{Le diagnostic matériel.} Les modèles produisent des
+hypothèses plausibles, argumentées, confiantes — et fausses. Elles sont d'autant plus
+coûteuses qu'elles sont \emph{crédibles} : elles envoient chercher au mauvais endroit,
+parfois pendant des jours.
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}p{5.2cm}X@{}}
+\toprule
+\textbf{Affirmation de l'IA} & \textbf{Réalité établie par la mesure} \\
+\midrule
+« Deux OV9281 exigent un multiplexeur I\textsuperscript{2}C matériel » &
+Faux. Chaque port CSI a son propre bus. Un \emph{overlay} adapté suffit. \\
+\addlinespace
+« \fichier{jetson-io.py} : sélectionnez \texttt{can0}, cela routera les broches » &
+Faux, et destructeur : l'outil écrase la configuration caméra/PWM. \\
+\addlinespace
+« L'\emph{overlay} \fichier{jetson-io-hdr40-user-custom.dtbo} est empoisonné : il assigne
+CAN0 à \broche{PAA2}/\broche{PAA3} » &
+\textbf{Faux.} Inspection du binaire : il ne contient \emph{que} les deux broches PWM
+(32 et 33). Aucune configuration CAN. \textbf{Le projet s'est arrêté sur cette fausse
+piste.} \\
+\addlinespace
+« La chirurgie réseau donnera un détecteur équivalent » &
+Mathématiquement exact, \textbf{opérationnellement faux} : l'équivalence formelle ne
+compense pas l'absence d'information couleur. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\paragraph{La règle qui s'en dégage.} Sur ce projet, \textbf{toutes} les avancées matérielles
+décisives sont venues d'une \emph{mesure} qui contredisait une hypothèse — pas d'un
+raisonnement. Le conflit \broche{PA2}/série a été trouvé en débranchant. Le
+\emph{pinmux} CAN a été caractérisé en interrogeant \texttt{debugfs}, pas en raisonnant sur
+des registres. La fausse piste finale aurait été écartée en \emph{ouvrant le fichier
+incriminé} — ce qui prend deux minutes, et n'a pas été fait.
+
+\begin{note}[Recommandation au repreneur]
+Utilisez ces outils pour écrire du code : le gain est réel et considérable. Mais devant un
+symptôme matériel, \textbf{n'acceptez aucune cause racine qui n'ait été confirmée par une
+mesure}. Le coût d'une vérification est presque toujours inférieur au coût d'une fausse
+piste bien argumentée.
+\end{note}
+
+% =====================================================================
+\newpage
+\section{Synthèse : par où reprendre}
+
+\begin{center}
+\begin{tabularx}{\textwidth}{@{}clX@{}}
+\toprule
+\textbf{\#} & \textbf{Chantier} & \textbf{Pourquoi dans cet ordre} \\
+\midrule
+1 & \textbf{Débloquer le CAN physique} &
+Rien d'intégré n'est démontrable tant que les n\oe uds ne se parlent pas. Piste : domaine
+\emph{pinmux} \textbf{AON}. Repli rapide : contrôleur CAN externe sur SPI. \\
+\addlinespace
+2 & \textbf{Implémenter le watchdog} &
+Condition \emph{sine qua non} de toute mise sous tension du laser de Classe 4.
+Aucun essai de tir avant cela. \\
+\addlinespace
+3 & \textbf{Jeu de données monochrome + réentraînement} &
+Rend au système sa fonction biologique et la discrimination inter-espèces. Sans cela, le
+système ne doit pas tirer. \\
+\addlinespace
+4 & \textbf{Assembler et étalonner la collimation} &
+Loi de commande établie ; mécanisme jamais monté. Attention : ne réduit
+\emph{pas} le risque oculaire. \\
+\addlinespace
+5 & \textbf{Gestion multi-cibles} &
+Un filtre de Kalman par cible + association de données. \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\vspace{1cm}
+\begin{note}[Le mot de la fin]
+Le système, tel qu'il est laissé, \textbf{suit} une cible en trois dimensions, à 60~Hz, avec
+une prédiction qui compense sa propre latence, et il oriente deux axes asservis en boucle
+fermée pour la garder en visée. Ce qui manque n'est pas le c\oe ur du problème : c'est
+\textbf{un bus qui ne s'allume pas}, \textbf{un jeu de données qui n'existe pas}, et
+\textbf{un garde-fou qu'il fallait écrire avant d'oser tirer}.
+
+Les fondations sont saines. Les trois chantiers sont indépendants. Bonne reprise.
+\end{note}
+
+% =====================================================================
+\newpage
+\bibliographystyle{plain}
+\bibliography{vespa}
+
+\end{document}

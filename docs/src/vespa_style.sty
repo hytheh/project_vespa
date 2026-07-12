@@ -1,0 +1,190 @@
+% =====================================================================
+%  vespa_style.sty — préambule commun aux documents du projet VESPA
+% =====================================================================
+\ProvidesPackage{vespa_style}[2026/07/12 Style commun Projet VESPA]
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{textcomp}
+\usepackage{gensymb}
+
+% --- Caractères Unicode utilisés dans le corps du texte --------------
+% pdflatex + inputenc ne connaît pas ces glyphes nativement.
+\DeclareUnicodeCharacter{03A9}{\ensuremath{\Omega}}      % Ω ohm
+\DeclareUnicodeCharacter{00B5}{\ensuremath{\mu}}         % µ micro
+\DeclareUnicodeCharacter{03BC}{\ensuremath{\mu}}         % μ mu
+\DeclareUnicodeCharacter{2192}{\ensuremath{\rightarrow}} % →
+\DeclareUnicodeCharacter{2264}{\ensuremath{\leq}}        % ≤
+\DeclareUnicodeCharacter{2265}{\ensuremath{\geq}}        % ≥
+\DeclareUnicodeCharacter{2248}{\ensuremath{\approx}}     % ≈
+\DeclareUnicodeCharacter{00D7}{\ensuremath{\times}}      % ×
+\DeclareUnicodeCharacter{2013}{--}                       % – demi-cadratin
+\DeclareUnicodeCharacter{2014}{---}                      % — cadratin
+\DeclareUnicodeCharacter{2019}{'}                        % ’ apostrophe
+\DeclareUnicodeCharacter{00B2}{\textsuperscript{2}}      % ²
+\DeclareUnicodeCharacter{00B3}{\textsuperscript{3}}      % ³
+\DeclareUnicodeCharacter{207B}{\textsuperscript{-}}      % ⁻
+\DeclareUnicodeCharacter{00B0}{\degree}                  % °
+\DeclareUnicodeCharacter{2011}{\mbox{-}}                 % ‑ tiret insécable
+
+\usepackage[a4paper,margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{listings}
+\usepackage[most]{tcolorbox}
+\usepackage{eurosym}
+\usepackage[hidelinks]{hyperref}
+
+% --- Couleurs -------------------------------------------------------
+\definecolor{vespaink}{HTML}{1A2733}
+\definecolor{vespaaccent}{HTML}{B8860B}
+\definecolor{vespared}{HTML}{A32020}
+\definecolor{vespagreen}{HTML}{1E6B3A}
+\definecolor{vespagray}{HTML}{5A6672}
+\definecolor{vespalight}{HTML}{F4F1EA}
+\definecolor{codebg}{HTML}{F6F8FA}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=vespaink,
+  urlcolor=vespaaccent,
+  citecolor=vespagreen,
+}
+
+% --- Titres ---------------------------------------------------------
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{vespaink}}{\thesection}{1em}{}
+  [{\color{vespaaccent}\titlerule[1pt]}]
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{vespaink}}{\thesubsection}{1em}{}
+
+% --- En-têtes -------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\color{vespagray}\leftmark}
+\fancyhead[R]{\small\color{vespagray}Projet V.E.S.P.A.}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% --- Code -----------------------------------------------------------
+\lstdefinestyle{vespa}{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{vespaink}\bfseries,
+  commentstyle=\color{vespagray}\itshape,
+  stringstyle=\color{vespagreen},
+  breaklines=true,
+  showstringspaces=false,
+  frame=leftline,
+  framerule=2pt,
+  rulecolor=\color{vespaaccent},
+  xleftmargin=1em,
+  numbers=none,
+  literate=%
+    {é}{{\'e}}1 {è}{{\`e}}1 {ê}{{\^e}}1 {à}{{\`a}}1
+    {ç}{{\c c}}1 {ô}{{\^o}}1 {î}{{\^i}}1 {û}{{\^u}}1
+    {É}{{\'E}}1 {°}{{\textdegree}}1 {²}{{\textsuperscript{2}}}1
+    {µ}{{$\mu$}}1 {–}{{--}}1 {’}{{'}}1 {«}{{\guillemotleft}}1
+    {»}{{\guillemotright}}1 {Ω}{{$\Omega$}}1 {→}{{$\rightarrow$}}1
+}
+\lstset{style=vespa}
+
+% --- Boîtes sémantiques ---------------------------------------------
+% Verrou levé
+\newtcolorbox{verroulevé}[1]{
+  enhanced, breakable,
+  colback=vespagreen!4, colframe=vespagreen,
+  boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+  fonttitle=\bfseries\color{white},
+  title={LEVÉ — #1},
+  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  boxed title style={colback=vespagreen, boxrule=0pt, arc=1mm}
+}
+
+% Verrou reporté
+\newtcolorbox{verroureporte}[1]{
+  enhanced, breakable,
+  colback=vespared!4, colframe=vespared,
+  boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+  fonttitle=\bfseries\color{white},
+  title={REPORTÉ — #1},
+  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  boxed title style={colback=vespared, boxrule=0pt, arc=1mm}
+}
+
+% Encadré d'avertissement
+\newtcolorbox{avertissement}[1][Avertissement]{
+  enhanced, breakable,
+  colback=vespared!6, colframe=vespared,
+  boxrule=1pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+  fonttitle=\bfseries\color{white},
+  title={#1},
+  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  boxed title style={colback=vespared, boxrule=0pt, arc=1mm}
+}
+
+% Encadré d'information
+\newtcolorbox{note}[1][Note]{
+  enhanced, breakable,
+  colback=vespalight, colframe=vespaaccent,
+  boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
+  fonttitle=\bfseries\color{white},
+  title={#1},
+  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  boxed title style={colback=vespaaccent, boxrule=0pt, arc=1mm}
+}
+
+% --- Raccourcis -----------------------------------------------------
+\newcommand{\vespa}{V.E.S.P.A.}
+\newcommand{\fichier}[1]{\texttt{\small #1}}
+\newcommand{\broche}[1]{\texttt{\textbf{#1}}}
+
+% Page de garde commune
+\newcommand{\vespatitlepage}[3]{%
+  \begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\color{vespagray}\large ENSIL-ENSCI — Université de Limoges\par}
+    {\color{vespagray}\large Projet de fin d'études — MIX 5 — Promotion 2026\par}
+    \vspace{1.5cm}
+    {\color{vespaaccent}\rule{\textwidth}{2pt}}\par
+    \vspace{0.8cm}
+    {\Huge\bfseries\color{vespaink} Projet \vespa\par}
+    \vspace{0.4cm}
+    {\large\color{vespagray} Tourelle optronique de suivi prédictif par stéréo-vision\\
+     à neutralisation laser dynamique — prototype mk.2\par}
+    \vspace{0.8cm}
+    {\color{vespaaccent}\rule{\textwidth}{2pt}}\par
+    \vspace{2cm}
+    {\Large\bfseries\color{vespaink} #1\par}
+    \vspace{0.5cm}
+    {\large\color{vespagray} #2\par}
+    \vfill
+    \begin{minipage}{0.45\textwidth}
+      \raggedright
+      \textbf{Équipe}\par
+      Antonin Delmas\par
+      Clément Desmedt\par
+      Clément Gilson\par
+    \end{minipage}
+    \begin{minipage}{0.45\textwidth}
+      \raggedleft
+      \textbf{Encadrement}\par
+      Michel Ousset — encadrant\par
+      Thierry Cortier — enseignant\par
+    \end{minipage}
+    \vspace{1.5cm}
+    \par{\color{vespagray} #3}
+  \end{titlepage}
+}

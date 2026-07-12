@@ -1,29 +1,63 @@
-# PlatformIO (Microcontrollers)
-.pio
+# ============================================================
+#  Project VESPA - .gitignore
+# ============================================================
 
-# VSCode - Share configuration, ignore local state
+# --- C++ / CMake (Jetson vision node) ---
+build/
+builds/
+bin/
+*.o
+*.so
+*.a
+
+# --- PlatformIO (STM32 / ESP32 / Arduino) ---
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# --- Python (maintenance tools: recreate with tools/*/run_*.sh) ---
+venv/
+venv_*/
+.venv/
+__pycache__/
+*.pyc
+
+# --- LaTeX build artefacts (docs/src) ---
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.bbl
+*.blg
+*.bcf
+*.run.xml
+*.synctex.gz
+*.fls
+*.fdb_latexmk
+
+# --- Runtime / capture artefacts ---
+*.pgm
+captures/
+*.lock
+
+# --- VSCode: share workflows, ignore local machine state ---
 .vscode/.browse.c_cpp.db*
 .vscode/ipch/
 .vscode/settings.json
 .vscode/c_cpp_properties.json
-# We KEEP launch.json and tasks.json to share build workflows
+# launch.json and tasks.json are intentionally tracked.
 
-# C++ / CMake (Jetson)
-build/
-builds/
-bin/
-lib/
-*.o
-*.so
-
-# Python
-__pycache__/
-*.pyc
-
-# OS / IDE
+# --- CAD / OS / IDE ---
+*.CATSystem
 .DS_Store
 .idea/
 *.swp
-*.CATSystem
+
+# --- Secrets ---
 secrets.h
 .env
+
+# LaTeX: les PDF compilés sont publiés dans docs/, pas dans docs/src/
+docs/src/*.pdf
