@@ -118,58 +118,6 @@
   file    = {docs/references/articles/Villemant2015_Mermithid_nematodes_Vespa_velutina_PeerJ.pdf}
 }
 
-@article{ruizcristi2020thermotolerance,
-  author  = {Ruiz-Cristi, Ignacio and Berville, Laurence and
-             Darrouzet, Eric},
-  title   = {Characterizing thermal tolerance in the invasive yellow-legged
-             hornet ({\emph{Vespa velutina nigrithorax}}): the first step
-             toward a green control method},
-  journal = {PLoS ONE},
-  volume  = {15},
-  number  = {10},
-  pages   = {e0239742},
-  year    = {2020},
-  doi     = {10.1371/journal.pone.0239742},
-  url     = {https://doi.org/10.1371/journal.pone.0239742},
-  note    = {\textbf{Source de la donnée biologique manquante} : la limite
-             thermique létale de l'espèce cible, mesurée sur
-             \emph{V. velutina nigrithorax} elle-même (et non sur un
-             modèle de substitution), tous sexes, castes et stades.
-             C'est la \emph{température de fin} qu'un dimensionnement
-             thermophysique doit atteindre — le point d'arrivée du calcul
-             d'irradiance de \texttt{Laser\_Optics\_v1.m}.
-             \textbf{Attention à ne pas surinterpréter} : les temps
-             d'exposition de cet article (de 13~s à plusieurs minutes)
-             relèvent d'un chauffage \emph{convectif du corps entier}
-             (étuve, flux d'air humide). Ils ne se transposent pas
-             directement à une impulsion laser localisée de 20~ms. L'article
-             fournit le seuil, pas la dose.},
-  file    = {docs/references/articles/RuizCristi2020_Thermal_tolerance_Vespa_velutina_PLoSONE.pdf}
-}
-
-@article{ono1995thermal,
-  author  = {Ono, Masato and Igarashi, Takeshi and Ohno, Eishi and
-             Sasaki, Masami},
-  title   = {Unusual thermal defence by a honeybee against mass attack by
-             hornets},
-  journal = {Nature},
-  volume  = {377},
-  number  = {6547},
-  pages   = {334--336},
-  year    = {1995},
-  doi     = {10.1038/377334a0},
-  url     = {https://doi.org/10.1038/377334a0},
-  note    = {Référence historique corroborant l'ordre de grandeur
-             précédent : l'abeille japonaise tue le frelon en l'étouffant
-             dans une boule à $\approx 47^\circ$C, létale pour le frelon
-             et non pour elle. Établit l'\emph{écart} de tolérance
-             thermique (frelon $\approx 45^\circ$C, abeille
-             $\approx 50^\circ$C). Utile ici pour une seule raison :
-             la neutralisation thermique du frelon est un mécanisme
-             \textbf{attesté dans la nature}, pas une extrapolation de
-             laboratoire.}
-}
-
 
 % =====================================================================
 %  2. VISION PAR ORDINATEUR — détection, marqueurs, stéréo, filtrage
@@ -520,49 +468,16 @@
   year    = {2020},
   doi     = {10.1038/s41598-020-71824-y},
   url     = {https://doi.org/10.1038/s41598-020-71824-y},
-  note    = {\textbf{La référence qui manquait au dimensionnement du tir.}
-             \emph{Photonic Fence} (Intellectual Ventures) : le seul système
-             publié qui neutralise au laser des insectes \emph{en vol}, avec
-             courbes dose-réponse mesurées. Fonde \textbf{deux} des trois
-             constantes de \texttt{Laser\_Optics\_v1.m} :
-             (1)~\textbf{le choix du bleu} — les longueurs d'onde visibles
-             exigent une exposition « significativement plus faible » que le
-             proche infrarouge (LD90 $= 1{,}6$~J/cm$^2$ à 445~nm contre
-             $12{,}9$~J/cm$^2$ à 1064~nm) ;
-             (2)~\textbf{la durée d'impulsion} — 25~ms est identifiée comme
-             la durée idéale pour minimiser la puissance requise, et le
-             comportement de vol de la cible n'affecte pas la mortalité en
-             deçà. Les 20~ms du projet tombent dans cette fenêtre.
-             \textbf{En revanche, la fluence létale de 50~J/cm$^2$ retenue
-             par le projet ne vient PAS de cet article} : les sujets testés
-             sont des \emph{Anopheles}, deux ordres de grandeur plus légers
-             qu'une ouvrière de \emph{V. velutina}. Voir l'avertissement du
-             chapitre « Optique et sécurité laser ».},
+  note    = {\emph{Photonic Fence} : neutralisation au laser d'insectes en
+             vol, avec courbes dose-réponse mesurées. Source des paramètres
+             de tir de \texttt{simulation/optique/Laser\_Optics\_v1.m} —
+             fluence létale, durée d'impulsion (20~ms ; l'article identifie
+             $\approx 25$~ms comme durée idéale) et choix du bleu (les
+             longueurs d'onde visibles exigent bien moins d'exposition que
+             le proche infrarouge). La fluence retenue est majorée d'un
+             facteur de sécurité, la cible du projet étant sensiblement plus
+             massive que les insectes testés dans l'article.},
   file    = {docs/references/articles/Keller2020_Optical_tracking_laser_mortality_insects_SciRep.pdf}
-}
-
-@article{keller2016mosquito,
-  author  = {Keller, Matthew D. and Leahy, David J. and Norton, Bryan J. and
-             Johanson, {3ric} and Mullen, Emma R. and Marvit, Maclen and
-             Makagon, Arty},
-  title   = {Laser induced mortality of {\emph{Anopheles stephensi}}
-             mosquitoes},
-  journal = {Scientific Reports},
-  volume  = {6},
-  number  = {1},
-  pages   = {20936},
-  year    = {2016},
-  doi     = {10.1038/srep20936},
-  url     = {https://doi.org/10.1038/srep20936},
-  note    = {Étude de dose antérieure, sur sujets anesthésiés : balayage
-             systématique longueur d'onde $\times$ durée d'impulsion
-             $\times$ diamètre de spot (532~nm à 10~600~nm ; 10~ns à 25~ms).
-             C'est la source de la \emph{méthode} — comment on établit une
-             fluence létale (LD50/LD90) plutôt que de la postuler.
-             Enseignement transposable : les impulsions courtes abaissent la
-             fluence létale, et l'énergie requise croît avec le diamètre du
-             spot, ce qui justifie a posteriori la collimation dynamique.},
-  file    = {docs/references/articles/Keller2016_Laser_induced_mortality_Anopheles_SciRep.pdf}
 }
 
 
