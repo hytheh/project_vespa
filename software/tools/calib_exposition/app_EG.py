@@ -191,7 +191,7 @@ def execute_v4l2_set(dev_id, ctrl_name, value):
 
 def safe_profile_name(name):
     """Return a filesystem-safe profile name, or None if invalid.
-    Allows the existing space/dash style (e.g. 'P2 - dark') but blocks anything
+    Allows word chars, spaces and dashes (e.g. 'P2_dark') but blocks anything
     that could escape PROFILES_DIR (slashes, dots, '..')."""
     if not name or not isinstance(name, str):
         return None
