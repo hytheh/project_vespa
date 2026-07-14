@@ -133,7 +133,8 @@ project_vespa/
 │   ├── annexes/             Câblage, protocole CAN, BOM, setup Jetson, sécurité, dette technique
 │   └── references/          Articles, datasheets, études préparatoires, rapport mk.1 (PDF)
 ├── hardware/
-│   └── mechanical/          Pièces imprimées 3D : CAO (STEP), maillages, moteur — voir son README
+│   └── mechanical/          CAO : assemblages STEP, maillages imprimés, plateaux PrusaSlicer, moteur — voir son README
+│                            (les modèles éditables restent sur le 3DEXPERIENCE de l'école)
 ├── jetson/                  Configuration système du Jetson (overlays, services CAN, extlinux)
 ├── simulation/              Scripts MATLAB de dimensionnement (vision + optique laser)
 ├── software/
