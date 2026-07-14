@@ -34,7 +34,7 @@ Trois *overlays* sont chargés au démarrage. Les fichiers de référence sont d
 |---|---|---|
 | `tegra234-p3767-camera-p3768-arducam-dual.dtbo` | Double caméra OV9281 (un bus I²C par port CSI) | ✅ Fonctionne |
 | `jetson-io-hdr40-user-custom.dtbo` | **PWM de synchronisation** — broches 32 et 33 | ✅ Fonctionne — **ne pas modifier** |
-| `can0-pinmux.dtbo` | Routage du CAN0 (« CAN0 Hardware Override V5 ») | ❌ **Ne fonctionne pas** |
+| `can0-pinmux.dtbo` | Routage du CAN0 (« CAN0 Hardware Override V5 »), broches 29/31 | ✅ Fonctionne — **mais absent de `/boot` en l'état** |
 
 ### Contenu réel de `jetson-io-hdr40-user-custom.dtbo`
 
@@ -101,7 +101,7 @@ mesurée : **0,000 ms**.
 
 ## 6. Bus CAN
 
-### Virtuel (`vcan0`) — ce qui fonctionne
+### Virtuel (`vcan0`) — pour développer sans matériel
 
 Le module est chargé au démarrage par [`jetson/systemd/vcan.conf`](../../jetson/systemd/vcan.conf) :
 
@@ -112,25 +112,41 @@ sudo ip link set up vcan0
 candump vcan0
 ```
 
-C'est sur ce bus que le protocole a été validé de bout en bout.
+`vcan0` est indiscernable d'un bus réel du point de vue de SocketCAN : le code applicatif est
+identique.
 
-### Physique (`can0`) — ce qui ne fonctionne pas
+### Physique (`can0`) — a fonctionné, à remettre en service
 
 Le service [`jetson/systemd/can0-setup.service`](../../jetson/systemd/can0-setup.service)
-est prêt (500 kbit/s, `restart-ms 500`) et n'est déclenché que si le noyau crée réellement
-le périphérique `can0` — ce qui **n'est jamais arrivé**.
+est prêt (500 kbit/s, `restart-ms 500`).
 
-**Câblage prévu** (transceiver **3,3 V uniquement** — jamais 5 V) :
+**Le bus a réellement fonctionné** : le 21 mars 2026, le Jetson a reçu **111 909 trames du
+STM32, sans une seule erreur** (`RX: 772684 bytes, 111909 packets, 0 errors`). Le *pinmux*,
+le câblage, la terminaison et le *bit timing* étaient donc corrects.
 
-| WCMCU-230 | En-tête 40 broches |
-|---|---|
-| `3V3` | broche 1 |
-| `GND` | broche 6 |
-| `CTX` | broche **31** (CAN0_TX) |
-| `CRX` | broche **29** (CAN0_RX) |
+**Câblage** — ⚠️ dépend de l'authenticité du transceiver (voir [`bom.md`](bom.md)) :
 
-**Le verrou.** Les broches SoC `PAA0`/`PAA1` (CAN0) ne sont jamais réclamées par le
-*pinmux*. Piste la plus probable : elles appartiennent au domaine **AON** (*always-on*),
-distinct du *pinmux* principal — un overlay ciblant le mauvais contrôleur reste sans effet.
+| WCMCU-230 | En-tête 40 broches | Remarque |
+|---|---|---|
+| Alim. | broche 1 (3,3 V) **ou** broche 2 (5 V) | **5 V si le module est un clone** |
+| `GND` | broche 6 | |
+| `CTX` | broche **31** (CAN0_TX) | direct — le 3,3 V du Jetson suffit |
+| `CRX` | broche **29** (CAN0_RX) | **pont diviseur 1 kΩ / 2 kΩ si clone 5 V** |
+
+**Ce qui reste à faire.** L'*overlay* a disparu de `/boot` après une mise à jour, et le
+routage est perdu :
+
+```bash
+find /boot -name "*can*.dtbo"     # vide  -> recopier depuis jetson/dts/
+sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
+#   ATTENDU : pin 0 (CAN0_DOUT_PAA0): c310000.mttcan
+#   ECHEC   : pin 0 (CAN0_DOUT_PAA0): (MUX UNCLAIMED)
+```
+
+> ⚠️ **Une mise à jour de JetPack peut supprimer le `.dtbo` sans toucher à la ligne
+> `OVERLAYS` qui le référence.** Le *bootloader* n'émet alors **aucune erreur** : `can0`
+> existe toujours, mais ses broches ne sont plus routées et le bus est muet. **C'est ainsi
+> que le bus a été perdu.** Revérifier après chaque mise à jour.
+
 Analyse complète et solution de repli (contrôleur CAN externe sur SPI) dans
 **`docs/Difficultes_techniques.pdf`**.

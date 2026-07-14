@@ -66,9 +66,10 @@ Les n\oe uds communiquent sur un \textbf{bus CAN 2.0B à 500~kbit/s} (trames sta
 
 % =====================================================================
 \section{Nomenclature (BOM)}
+\label{sec:bom}
 
-Nomenclature du prototype mk.2, telle qu'effectivement approvisionnée.
-Total $\approx$ \textbf{830~\euro{}} TTC.
+Nomenclature du prototype mk.2, \textbf{telle que réellement montée}. Total relevé
+$\approx$ \textbf{830~\euro{}} TTC (le prix des cartes ST n'a pas été consigné).
 
 \begin{center}
 \begin{tabularx}{\textwidth}{@{}Xlr@{}}
@@ -77,10 +78,12 @@ Total $\approx$ \textbf{830~\euro{}} TTC.
 \midrule
 \multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Calcul et électronique}}} \\
 Jetson Orin Nano Super Developer Kit & 1 & 311,18~\euro{} \\
-B-G431B-ESC1 \textit{\footnotesize (voir note ci-dessous)} & 2 & 16,31~\euro{} \\
-ESP32-C3 SuperMini \textit{\footnotesize (coordination — non utilisé)} & 1 & 4,29~\euro{} \\
+\textbf{NUCLEO-G431RB} \textit{\footnotesize (MCU du \fichier{motion\_node})} & 1 & --- \\
+\textbf{X-NUCLEO-IHM16M1} (STSPIN830) \textit{\footnotesize (étages de puissance)} & 2 & --- \\
+ESP32-C3 SuperMini \textit{\footnotesize (coordination — non implémentée)} & 1 & 4,29~\euro{} \\
 Alimentation AC-DC 24~V / 150~W & 1 & 5,29~\euro{} \\
-Transceivers CAN (lot de 10, type WCMCU-230 / SN65HVD230) & 1 & 5,19~\euro{} \\
+Transceivers CAN WCMCU-230 (lot de 10) \textcolor{vespared}{\textbf{(contrefaits)}}
+  & 1 & 5,19~\euro{} \\
 TMC2209 (lot de 4) \textit{\footnotesize (collimation)} & 1 & 9,09~\euro{} \\
 \addlinespace
 \multicolumn{3}{@{}l}{\textit{\textcolor{vespagray}{Vision}}} \\
@@ -103,19 +106,26 @@ Lentille asphérique K9 D63 F100 \textit{\footnotesize (L2, focale 100~mm)} & 1 
 \end{tabularx}
 \end{center}
 
-\begin{note}[Deux divergences entre la nomenclature et le matériel réellement utilisé]
-\begin{enumerate}[nosep]
-  \item \textbf{Cartes de commande moteur.} La nomenclature liste des \textbf{B-G431B-ESC1}.
-        Le firmware livré cible en réalité une \textbf{NUCLEO-G431RB} portant deux shields
-        \textbf{X-NUCLEO-IHM16M1} (STSPIN830) — c'est ce que déclarent
-        \fichier{platformio.ini} (\texttt{board = nucleo\_g431rb}) et
-        \fichier{pinout.h}. \textbf{Suivre le code, pas la nomenclature.}
-  \item \textbf{Le laser.} La nomenclature (et donc le matériel acheté) porte sur une diode
-        \textbf{5,5~W bleue}. Le dimensionnement théorique du rapport de soutenance a été
-        conduit pour $P = 5$~W à 460~nm. Les deux valeurs sont cohérentes en ordre de
-        grandeur ; c'est la diode 5,5~W qui est physiquement présente.
-        \textbf{Classe 4 dans les deux cas.}
-\end{enumerate}
+\begin{avertissement}[Les transceivers CAN du lot sont des contrefaçons]
+Les modules \fichier{WCMCU-230} approvisionnés, vendus comme portant un \textbf{SN65HVD230}
+de Texas Instruments (3,3~V), sont des \textbf{clones 5~V} : boîtiers poncés et re-marqués au
+laser. Un montage 3,3~V « théorique » avec ces modules donne un bus \textbf{asymétrique} —
+réception parfaite, émission morte.
+
+\textbf{Montage qui fonctionne avec ces modules :} alimentation \textbf{5~V} sur la broche
+sérigraphiée « \texttt{3V3} », et \textbf{pont diviseur 1~k$\Omega$ / 2~k$\Omega$} sur la
+sortie \texttt{CRX} pour la ramener à 3,3~V vers le Jetson. \emph{Ne pas} employer de
+convertisseur de niveau à MOSFET : trop lent à 500~kbit/s.
+
+\textbf{Avec de vrais SN65HVD230}, câbler en 3,3~V, sans diviseur. \textbf{Vérifier lequel
+des deux vous avez avant de câbler} — c'est le verrou le plus coûteux du projet
+(voir « Difficultés techniques »).
+\end{avertissement}
+
+\begin{note}[Laser : 5~W au calcul, 5,5~W à l'achat]
+Le dimensionnement théorique du rapport de soutenance a été conduit pour $P = 5$~W à 460~nm ;
+la diode physiquement présente fait \textbf{5,5~W}. Les deux valeurs sont cohérentes en ordre
+de grandeur et ne changent aucune conclusion. \textbf{Classe 4 dans les deux cas.}
 \end{note}
 
 \paragraph{Moteurs.} GM5208-12, PMSM \emph{pancake} : \textbf{7 paires de pôles}
@@ -133,9 +143,10 @@ Le câblage complet, broche à broche, est en annexe :
 \begin{avertissement}[Les deux pièges du câblage]
 \textbf{1. Le potentiomètre \textsc{pan} n'est PAS sur \broche{PA2}, mais sur
 \broche{PB14}.}\\
-\broche{PA2} est câblée sur \texttt{USART2\_TX} (console série du ST-LINK) sur la
-NUCLEO-G431RB. Y brancher le potentiomètre \textbf{coupe la console}. Le fichier historique
-\fichier{STM32\_WiringManifest.txt} indique encore \broche{PA2} : il est faux.
+Sur la NUCLEO-G431RB, \broche{PA2} est câblée sur \texttt{USART2\_TX} — la console série du
+ST-LINK. C'est aussi la broche « \textsc{speed} » par défaut du shield IHM16M1 : suivre le
+brochage nominal du shield y met donc le potentiomètre, ce qui \textbf{coupe la console} sans
+qu'aucun symptôme ne désigne le coupable.
 
 \medskip
 \textbf{2. \broche{PA4} est réservée au SPI (NSS matériel), pas au retour de courant.}\\
@@ -144,16 +155,19 @@ Elle doit rester haute, sous peine de faire basculer le SPI1 — qui porte les d
 conséquence.
 \end{avertissement}
 
-\paragraph{Bus CAN.} Transceiver \textbf{3,3~V uniquement} (SN65HVD230 / WCMCU-230).
-\textbf{Ne jamais l'alimenter en 5~V} : cela détruit le composant et peut endommager les
-broches du Jetson.
+\paragraph{Bus CAN.} \textbf{Lire d'abord l'avertissement sur les transceivers contrefaits}
+(§\ref{sec:bom}) : il détermine la tension d'alimentation du module.
 \begin{itemize}[nosep]
   \item Côté Jetson : \texttt{CTX} $\rightarrow$ broche \textbf{31}, \texttt{CRX}
-        $\rightarrow$ broche \textbf{29}, 3V3 $\rightarrow$ broche 1, GND $\rightarrow$
-        broche 6.
+        $\rightarrow$ broche \textbf{29}, GND $\rightarrow$ broche 6. L'alimentation du module
+        dépend de son authenticité (3,3~V si véritable, 5~V si clone).
   \item Côté STM32 : \texttt{CAN\_TX} = \broche{PB9}, \texttt{CAN\_RX} = \broche{PB8}.
   \item \textbf{Masse commune obligatoire} entre les n\oe uds (3\ieme{} fil) : le CAN est
         différentiel, mais le transceiver a une limite de tension de mode commun.
+        \textbf{Attention au piège de banc} : lorsque les deux cartes sont reliées par USB au
+        \emph{même} PC, elles partagent déjà une masse par les blindages. Le bus semble
+        fonctionner \emph{sans} fil de masse — et meurt dès qu'on les débranche pour passer
+        sur batterie.
   \item Terminaison \textbf{120~$\Omega$} aux \emph{deux extrémités} du bus, et
         \emph{seulement} aux extrémités. Les modules WCMCU-230 embarquent une résistance
         (sérigraphiée \texttt{R2}, marquage « 121 ») : la dessouder sur tout n\oe ud qui
@@ -200,8 +214,9 @@ I\textsuperscript{2}C (un bus par port CSI). \\
 \textcolor{vespared}{\textbf{Ne pas modifier ni régénérer.}} \\
 \addlinespace
 \fichier{can0-pinmux.dtbo} &
-Tentative de routage du CAN0. \textcolor{vespared}{\textbf{Ne fonctionne pas}} — voir
-« Difficultés techniques ». \\
+\textbf{Routage du CAN0} sur les broches 29/31. \textcolor{vespagreen}{\textbf{Fonctionne}} —
+c'est cet \emph{overlay} qui a porté le bus. \textbf{Vérifier après chaque mise à jour qu'il
+est toujours dans \fichier{/boot}} (copie de secours : \fichier{jetson/dts/}). \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -233,16 +248,29 @@ v4l2-ctl --list-devices
 # Le PWM de synchronisation doit etre exportable
 ls /sys/class/pwm/pwmchip3/
 
-# Le CAN physique : NE FONCTIONNE PAS a ce jour (verrou ouvert)
+# Le CAN physique : les broches doivent etre RECLAMEES par le controleur
 sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
-#   -> aucune sortie = les broches PAA ne sont pas reclamees
+#   ATTENDU : pin 0 (CAN0_DOUT_PAA0): c310000.mttcan
+#   ECHEC   : pin 0 (CAN0_DOUT_PAA0): (MUX UNCLAIMED)  -> overlay absent
 \end{lstlisting}
 
-\subsection{Bus CAN virtuel (indispensable pour travailler)}
+\begin{avertissement}[Après toute mise à jour du Jetson, revérifier ceci]
+Une mise à jour de JetPack peut \textbf{supprimer silencieusement}
+\fichier{/boot/can0-pinmux.dtbo} sans toucher à la ligne \texttt{OVERLAYS} qui le référence.
+Le \emph{bootloader} ne trouve rien, \textbf{n'émet aucune erreur}, et démarre sans
+l'\emph{overlay} : \texttt{can0} existe toujours, mais ses broches ne sont plus routées et
+le bus est muet. \textbf{C'est exactement ainsi que le bus a été perdu à la fin du projet.}
+\begin{lstlisting}[language=bash]
+find /boot -name "*can*.dtbo"    # si vide : recopier depuis jetson/dts/
+\end{lstlisting}
+\end{avertissement}
 
-Le bus physique étant inopérant, le développement et la validation se font sur
-\texttt{vcan0}. Le fichier \fichier{jetson/systemd/vcan.conf} charge le module au
-démarrage :
+\subsection{Bus CAN virtuel (pour développer sans matériel)}
+
+\texttt{vcan0} présente à SocketCAN une interface \textbf{indiscernable d'un bus réel} : le
+code applicatif est identique. C'est ce qui a permis d'écrire et de valider tout le protocole
+avant que le bus physique soit disponible, puis de basculer sur \texttt{can0} sans changer une
+ligne. Le fichier \fichier{jetson/systemd/vcan.conf} charge le module au démarrage :
 
 \begin{lstlisting}[language=bash]
 sudo modprobe vcan
@@ -253,8 +281,8 @@ candump vcan0                        # observer les trames
 
 \noindent
 Le service \fichier{jetson/systemd/can0-setup.service} configure le bus \emph{physique}
-(500~kbit/s) — il est écrit pour ne se déclencher que si le noyau crée réellement le
-périphérique \texttt{can0}, ce qui n'est jamais arrivé.
+(500~kbit/s) et ne se déclenche que si le noyau crée réellement le périphérique
+\texttt{can0}.
 
 % =====================================================================
 \newpage
@@ -391,8 +419,8 @@ sudo ./build/test_hardware_sync
         La dérive inter-caméras doit être nulle. Si elle ne l'est pas, ne pas aller plus
         loin : la triangulation serait fausse.
 
-  \item \textbf{Monter le bus} (virtuel, en l'état actuel) : \texttt{vcan0}, et lancer
-        \texttt{candump} sur une seconde console.
+  \item \textbf{Monter le bus} : \texttt{can0} si le matériel est câblé, \texttt{vcan0} pour
+        travailler sans, et lancer \texttt{candump} sur une seconde console.
 
   \item \textbf{Démarrer le n\oe ud de mouvement.} À la mise sous tension, la séquence FOC
         s'initialise. Les décalages d'encodeur sont \textbf{codés en dur} dans
@@ -504,10 +532,14 @@ Prédiction & Filtre de Kalman, compense la latence de la chaîne &
 Asservissement & FOC boucle fermée, 2 axes, butées, arrêt d'urgence &
 \textcolor{vespagreen}{matériel réel} \\
 Protocole CAN & Sérialisation, priorités, \emph{heartbeats} &
-\textcolor{vespaaccent}{\texttt{vcan0} seulement} \\
+\textcolor{vespagreen}{matériel réel} \\
+Bus CAN physique & Jetson $\leftarrow$ STM32 : \textbf{111\,909 trames, 0 erreur} &
+\textcolor{vespagreen}{matériel réel} \\
 \midrule
-\textbf{Bus CAN physique} & \textcolor{vespared}{\textbf{Ne fonctionne pas}} — \emph{pinmux}
-non réclamé & — \\
+\textbf{Bus CAN — sens émission} & \textcolor{vespaaccent}{\textbf{Non reconfirmé}} après
+correction des transceivers contrefaits & — \\
+\textbf{Bus CAN — persistance} & \textcolor{vespared}{\textbf{\emph{Overlay} absent de
+\fichier{/boot}}} — à réinstaller & — \\
 \textbf{Détection du frelon} & \textcolor{vespared}{\textbf{Absente}} — remplacée par ArUco
 & — \\
 \textbf{Watchdog} & \textcolor{vespared}{\textbf{Non implémenté}} & — \\

@@ -6,52 +6,46 @@
 \vespatitlepage
   {Bibliographie}
   {Sources, normes et documentation technique}
-  {Document de clôture — juillet 2026\\
-   Bibliographie \textbf{reconstituée}. Voir l'avertissement en page suivante.}
+  {Projet \vespa{} mk.2 — ENSIL-ENSCI, Limoges}
 
 \tableofcontents
 \newpage
 
 % =====================================================================
-\section{Avertissement sur la reconstitution}
+\section{Organisation et usage}
 
-\begin{avertissement}[Cette bibliographie a été reconstituée a posteriori]
-Le dossier bibliographique constitué pendant le projet a été \textbf{perdu}, et l'exemplaire
-conservé du rapport de soutenance ne comporte ni section bibliographique ni liens. La
-présente bibliographie a donc été \textbf{rétablie après coup}, en juillet 2026.
-\end{avertissement}
+Cette bibliographie n'est pas une liste de lectures : c'est l'ensemble des documents dont le
+projet \textbf{dépend effectivement}. Chaque entrée est accompagnée, dans le fichier source,
+d'une note précisant \textbf{à quoi elle a servi} — quel calcul elle fonde, quel composant
+elle décrit, quelle contrainte elle impose. Une référence qui n'a rien déterminé n'y figure
+pas.
 
-\paragraph{Méthode de reconstitution.} Les références n'ont pas été devinées. Elles ont été
-rétablies à partir de trois sources matérielles, par ordre de fiabilité :
+\paragraph{Trois natures de sources, trois usages.}
 
 \begin{enumerate}
-  \item \textbf{Les PDF survivants} (\fichier{docs/references/}). Cinq articles
-        scientifiques et plusieurs manuels constructeur avaient été archivés dans le dépôt.
-        \textbf{Les métadonnées de chacun ont été vérifiées sur la première page du document
-        lui-même} (auteurs, revue, volume, DOI) — et non sur une base de données externe.
-        Ces références sont \textbf{certaines}.
-  \item \textbf{Les composants effectivement utilisés.} Les manuels et fiches techniques du
-        matériel réellement présent dans la nomenclature et dans le code
-        (NUCLEO-G431RB, X-NUCLEO-IHM16M1, OV9281, AS5048A, Jetson Orin Nano).
-        Ces références sont \textbf{certaines} : le matériel est identifié sans ambiguïté par
-        \fichier{platformio.ini}, \fichier{pinout.h} et la nomenclature.
-  \item \textbf{Les dépendances logicielles réelles.} Les bibliothèques que le code
-        \emph{compile et lie} effectivement (OpenCV, SimpleFOC, SocketCAN, V4L2), et les
-        normes dont il applique les prescriptions (ISO 11898, IEC 60825).
+  \item \textbf{Les articles scientifiques} (\fichier{docs/references/articles/}) fondent le
+        \emph{cahier des charges} : biologie et comportement de la cible, état de l'art de la
+        détection. Ils déterminent \emph{ce que le système doit faire}, et surtout ce qu'il
+        \emph{ne doit pas} faire — ne pas tirer sur \emph{Vespa crabro}.
+  \item \textbf{Les manuels constructeur et fiches techniques}
+        (\fichier{docs/references/datasheets/}) fondent la \emph{conception matérielle}. Ce
+        sont eux qui fixent les brochages, les seuils électriques et les limites physiques.
+        Plusieurs verrous du projet sont des lignes de ces documents qui n'avaient pas été
+        lues assez tôt.
+  \item \textbf{Les normes} (ISO 11898 pour le bus CAN, IEC 60825 pour le laser) sont
+        \emph{prescriptives}. Celle de sécurité laser, en particulier, ne se discute pas.
 \end{enumerate}
 
-\paragraph{Ce qui relève de la reconstitution raisonnée.} Quelques références
-\emph{fondamentales} (Zhang pour la calibration, Kalman pour le filtrage, Hartley \&
-Zisserman pour la triangulation, Hecht pour l'optique) ne figuraient pas dans les fichiers
-retrouvés, mais \textbf{le code met en \oe uvre leurs méthodes} : \texttt{cv::stereoCalibrate}
-implémente Zhang, \texttt{PredictiveTurretSight} implémente un filtre de Kalman. Elles sont
-citées parce qu'elles sont les sources canoniques de méthodes \emph{démontrablement
-employées}, non parce qu'il est établi qu'elles avaient été consultées à l'époque.
+\begin{note}[Vérification des métadonnées]
+Les métadonnées de chaque article (auteurs, revue, volume, DOI) ont été relevées
+\textbf{sur la première page du document lui-même}, et non sur une base de données
+secondaire. Les fiches techniques renvoient au matériel identifié sans ambiguïté par
+\fichier{platformio.ini}, \fichier{pinout.h} et la nomenclature.
+\end{note}
 
 \paragraph{Fichier source.} L'ensemble est maintenu en BibTeX dans
-\textbf{\fichier{docs/src/vespa.bib}}, avec, pour chaque entrée, une note indiquant
-\emph{à quoi elle a servi dans le projet}. C'est ce fichier qu'il faut enrichir, et non ce
-PDF.
+\textbf{\fichier{docs/src/vespa.bib}}. C'est ce fichier qu'il faut enrichir, et non ce PDF,
+qui en est une vue commentée.
 
 % =====================================================================
 \section{Biologie de la cible}
@@ -156,12 +150,19 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
         abordable}. C'est la cause racine de l'incompatibilité avec VespAI.
 
   \item \textbf{Arducam UC-788} \cite{arducam_uc788} — carte porteuse assurant la
-        compatibilité avec l'écosystème Jetson et le déclenchement externe.
+        compatibilité avec l'écosystème Jetson et le déclenchement externe. \textbf{C'est la
+        source qui établit que le constructeur ne prévoit pas la synchronisation matérielle
+        sur cartes standard} : elle passe par son accessoire propriétaire (\emph{Camarray
+        HAT}), et la piste \texttt{XVS/FSIN} est coupée en sortie d'usine sur les cartes
+        vendues seules. Le projet obtient malgré tout un déclenchement stéréo matériel sur
+        deux cartes standard (voir « Difficultés techniques »).
 
   \item \textbf{NVIDIA Jetson Orin Nano — carte porteuse} \cite{nvidia_orin_nano_carrier} —
         brochage de l'en-tête 40 points. Source des broches PWM (32/33) utilisées pour la
         synchronisation stéréo, \textbf{et} des broches CAN0 (\broche{PAA0}/\broche{PAA1},
-        en-tête 31/29) restées non réclamées par le \emph{pinmux}.
+        en-tête 31/29) sur lesquelles le bus a fonctionné. \textbf{C'est ce document qui
+        établit que CAN0 sort sur les broches 29/31, et non celles de CAN1} — la confusion
+        entre les deux a coûté plusieurs itérations d'\emph{overlay}.
 
   \item \textbf{JetPack / Jetson Linux} \cite{nvidia_jetpack} — environnement déployé
         (JetPack 6.2). \textbf{Le noyau doit être remplacé par le noyau Arducam.}
@@ -176,9 +177,12 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
         \texttt{FIRE\_CMD} porte l'identifiant le plus faible (\texttt{0x010}), donc la
         priorité absolue sur le bus.
 
-  \item \textbf{SocketCAN} \cite{socketcan} — pile CAN de Linux, côté Jetson. C'est
-        l'interface virtuelle \texttt{vcan0} qui a permis de valider le protocole de bout en
-        bout \textbf{malgré l'indisponibilité du bus physique}.
+  \item \textbf{SocketCAN} \cite{socketcan} — pile CAN de Linux, côté Jetson. Son interface
+        virtuelle \texttt{vcan0} a permis de développer et de valider tout le protocole
+        \textbf{avant} que le bus physique soit disponible ; le code applicatif est passé sur
+        \texttt{can0} réel \textbf{sans une ligne de changement}. Ses compteurs
+        (\texttt{ip -s link show can0}) sont aussi l'instrument qui a mis en évidence
+        l'asymétrie réception/émission révélatrice des transceivers contrefaits.
 \end{itemize}
 
 % =====================================================================
@@ -206,23 +210,31 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
 
 \begin{itemize}[leftmargin=*]
   \item \textbf{Cosson \& Grimal (2025)} \cite{cosson2025vespa_mk1} — \textbf{prototype
-        mk.1}. Détection YOLOv8, tourelle à moteurs pas-à-pas Nema 17 sur Arduino Uno, diode
-        laser de quelques milliwatts. Ce sont les limites de ce prototype — décrochage,
-        \emph{jitter}, dérive cumulative — que le mk.2 a caractérisées puis levées.
-        \textbf{Référence citée dans le rapport de soutenance sous la forme
-        « cf. Rapport 2024/2025 » ; le document lui-même n'a pas été retrouvé} et devra être
-        récupéré auprès de l'établissement.
+        mk.1}, « Dispositif de lutte contre les frelons asiatiques — Système de pointage de
+        la cible ». Détection par YOLOv8, tourelle à moteurs pas-à-pas pilotée par Arduino
+        Uno (shield DRV8825), liaison Python/Arduino par port série, et une première
+        exploration du portage sur GPU Jetson.
+
+        \textbf{C'est la référence fondatrice du mk.2}, et elle se lit à l'envers : les
+        limites qu'elle constate définissent en creux notre cahier des charges. L'absence de
+        FPU sur l'ATmega328P et le décrochage des pas-à-pas ont donné la commande vectorielle
+        sur encodeurs absolus ; l'absence de perception de la profondeur a donné la
+        stéréo-vision et la triangulation. \textbf{Le mk.2 n'est pas une amélioration du
+        mk.1 : c'est la réponse à son bilan.}
+
+        Archivé dans
+        \fichier{docs/references/rapports/Cosson\_Grimal\_2025\_VESPA\_mk1\_Pointage.pdf}.
 
   \item \textbf{Delmas, Desmedt \& Gilson (2026)} \cite{delmas2026vespa_mk2} — le rapport de
         soutenance du présent prototype, conservé tel quel dans
         \fichier{docs/Rapport\_PFE\_2026\_VESPA.pdf}.
 \end{itemize}
 
-\begin{note}[Lacune identifiée]
-La seule référence \textbf{manquante} et \textbf{non reconstituable} est le rapport de PFE
-2024/2025 de L.~Cosson et H.~Grimal (prototype mk.1), cité dans le rapport de soutenance
-mais absent des archives. Il devrait être récupérable auprès de l'ENSIL-ENSCI ou de
-M.~Ousset.
+\begin{note}[Filiation des deux prototypes]
+Les deux rapports se lisent ensemble. Le mk.1 établit la \emph{faisabilité} de la détection
+et du pointage ; le mk.2 attaque les trois limites qu'il laisse ouvertes — la précision de
+l'asservissement, la mesure de la distance, et la puissance de l'effecteur. Un repreneur qui
+n'aurait à lire qu'un seul document d'histoire du projet doit lire le mk.1 en premier.
 \end{note}
 
 % =====================================================================

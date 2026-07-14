@@ -12,11 +12,16 @@
 | Standard | CAN 2.0B (ISO 11898-1), trames **standard 11 bits** |
 | Débit | **500 kbit/s** |
 | Terminaison | 120 Ω à chaque extrémité du bus |
-| Transceiver `motion_node` | WCMCU-230 (SN65HVD230), 3,3 V |
-| Transceiver `vision_node` | Jetson Orin Nano — contrôleur CAN intégré (MTTCAN) |
+| Transceiver `motion_node` | WCMCU-230 — ⚠️ **contrefaçon 5 V**, voir [`bom.md`](bom.md) |
+| Transceiver `vision_node` | Jetson Orin Nano — contrôleur CAN intégré (MTTCAN), broches 29/31 |
 
-> ⚠️ **Le bus physique n'a jamais été fonctionnel de bout en bout.** Le protocole a été
-> validé sur interface virtuelle `vcan0`. Voir *Difficultés techniques*, verrou « bus CAN
+> **Le protocole a tourné sur le bus physique** : le Jetson a reçu **111 909 trames du
+> STM32, sans une seule erreur** (relevé `ip -s link show can0`, 21 mars 2026). Il a d'abord
+> été développé sur interface virtuelle `vcan0`, et le passage au `can0` réel n'a demandé
+> **aucune modification du code applicatif**.
+>
+> Deux points restent à refermer côté matériel — le sens émission, et la persistance de
+> l'*overlay* de *pinmux* après redémarrage. Voir *Difficultés techniques*, verrou « bus CAN
 > physique », et [`jetson_setup.md`](jetson_setup.md).
 
 ## 2. Principe de conception
@@ -103,5 +108,24 @@ candump vcan0 &                    # observer
 # lancer vision_node configuré sur vcan0 : les trames 020 / 010 doivent apparaître
 ```
 
-C'est de cette manière que la sérialisation a été validée de bout en bout,
-le bus physique étant resté indisponible.
+`vcan0` est indiscernable d'un bus réel du point de vue de SocketCAN : c'est ainsi que la
+sérialisation a été mise au point avant que le matériel soit prêt, puis reportée sur `can0`
+sans changer une ligne.
+
+## 7. Diagnostic sur bus physique
+
+Les compteurs du noyau sont l'outil de diagnostic le plus utile du projet — c'est leur
+lecture qui a révélé la contrefaçon des transceivers :
+
+```bash
+ip -details -statistics link show can0
+```
+
+| Ce que vous voyez | Ce que cela signifie |
+|---|---|
+| `RX` progresse, `TX` figé, état `BUS-OFF` | Vous **recevez** mais n'**émettez** pas. Bus asymétrique ⇒ **couche physique**, pas logiciel. C'était la contrefaçon. |
+| `RX` et `TX` à 0, état `ERROR-ACTIVE` | Les broches ne sont probablement pas routées. Vérifier le *pinmux* (`grep -i paa`). |
+| `RX errors` grimpe | Signal dégradé : fronts trop lents (convertisseur de niveau ?) ou terminaison absente. |
+
+> **Un bus CAN différentiel ne peut pas être asymétrique.** Si un sens marche et pas
+> l'autre, le défaut est électrique, entre le contrôleur et le fil.

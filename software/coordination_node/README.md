@@ -74,8 +74,15 @@ et surtout **ne pas redéfinir les structures**.
 
 Le code CAN est portable : `software/common/can_utils.c` compile sur STM32, ESP32 et Linux.
 Un ESP32 dispose d'un contrôleur CAN natif (TWAI), compatible avec le bus 500 kbit/s du
-projet, moyennant un transceiver 3,3 V (SN65HVD230 / WCMCU-230).
+projet, moyennant un transceiver.
 
-⚠️ **Le bus CAN physique ne fonctionne pas à ce jour** (verrou ouvert côté Jetson).
-Développer et tester sur `vcan0`, comme l'ont fait les autres nœuds — voir
+⚠️ **Attention au transceiver.** Les modules WCMCU-230 approvisionnés pour le projet sont
+des **contrefaçons 5 V** vendues pour des SN65HVD230 3,3 V (boîtiers poncés et re-marqués).
+Ils fonctionnent, mais **alimentés en 5 V**, avec un pont diviseur 1 kΩ / 2 kΩ sur la sortie
+`CRX`. Vérifier ce que vous avez en main avant de câbler — voir
+[`docs/annexes/bom.md`](../../docs/annexes/bom.md).
+
+Le plus simple pour démarrer reste de développer sur `vcan0`, comme l'ont fait les autres
+nœuds : l'interface est indiscernable d'un bus réel côté SocketCAN, et le passage au matériel
+n'a demandé aucune modification du code. Voir
 [`docs/Difficultes_techniques.pdf`](../../docs/Difficultes_techniques.pdf).

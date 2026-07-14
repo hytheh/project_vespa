@@ -73,9 +73,10 @@ deux n\oe uds \fichier{/dev/video*} indépendants, chacun avec son propre sous-p
 de contrôle. Aucun multiplexeur matériel n'est nécessaire.
 \end{verroulevé}
 
-C'est le résultat que le rapport de soutenance qualifiait d'« inédit ». La formulation est
-excessive — la solution est une conséquence de l'architecture du Tegra — mais elle a bien
-levé un blocage réputé rédhibitoire, et elle a économisé un composant.
+C'est le résultat que le rapport de soutenance qualifiait d'« inédit », et la formulation est
+justifiée : la documentation constructeur comme les fils de support concluent à la nécessité
+d'un multiplexeur matériel. Le blocage est réputé rédhibitoire ; il ne l'est pas. La solution
+économise un composant et une source de latence.
 
 % ---------------------------------------------------------------------
 \subsection{Synchroniser les deux capteurs à quelques microsecondes près}
@@ -107,6 +108,27 @@ subsiste dans \texttt{captureSynchronizedPair()} : toute paire dont les horodata
 s'écartent de plus de 5~ms est rejetée et resynchronisée par consommation de la file la
 plus en retard.
 \end{verroulevé}
+
+\paragraph{Pourquoi ce résultat est réellement inédit.} Ce n'est pas une figure de style. La
+position du constructeur est explicite : la synchronisation matérielle de plusieurs caméras
+passe par un accessoire propriétaire, le \textbf{Camarray HAT} (déclinaisons
+\emph{Stereoscopic} et \emph{Quadrascopic}), qui agrège les modules et leur injecte une
+horloge maîtresse par la nappe~\cite{arducam_uc788}. Les cartes UC-788 vendues dans ces kits
+subissent d'ailleurs des modifications d'usine irréversibles (oscillateur 24~MHz non peuplé,
+adresse I\textsuperscript{2}C altérée au niveau des résistances) qui les rendent inutilisables
+seules. Sur une carte UC-788 \emph{standard}, la piste qui relie la broche \texttt{XVS/FSIN}
+du capteur aux pastilles de déclenchement est \textbf{physiquement coupée en sortie
+d'usine} — un emplacement 0402 laissé vide fait office de circuit ouvert.
+
+\medskip
+\noindent
+Autrement dit : le chemin officiel pour obtenir un déclenchement stéréo matériel est
+d'\textbf{acheter la carte du constructeur}. Le \emph{motion node} de VESPA ne l'a pas fait.
+Il obtient le même résultat sur \textbf{deux cartes UC-788 standard}, en prenant l'horloge
+maîtresse là où personne ne la cherche : le \textbf{générateur PWM matériel du Tegra
+lui-même}, câblé sur l'en-tête 40 broches. Aucun accessoire, aucun microcontrôleur
+intermédiaire, aucune dérive logicielle. \textbf{Le constructeur affirme que cela demande son
+matériel ; la mesure dit le contraire.}
 
 % ---------------------------------------------------------------------
 \subsection{Les réglages optiques ne s'appliquaient pas}
@@ -211,11 +233,11 @@ Sur une machine reconstruite selon ce dépôt, exécuter \fichier{jetson-io.py} 
 \end{verroulevé}
 
 % ---------------------------------------------------------------------
-\subsection{Valider le protocole CAN sans bus CAN}
+\subsection{Développer le protocole CAN avant d'avoir le bus}
 
 \begin{verroulevé}{Bus virtuel \texttt{vcan0}}
-Le bus physique n'ayant jamais fonctionné (voir §\ref{sec:can}), la totalité de la couche
-protocolaire a été validée sur une interface CAN \textbf{virtuelle} :
+Pour ne pas séquentialiser le projet derrière l'intégration matérielle, toute la couche
+protocolaire a d'abord été développée et validée sur une interface CAN \textbf{virtuelle} :
 
 \begin{lstlisting}[language=bash]
 sudo modprobe vcan
@@ -224,32 +246,116 @@ candump vcan0
 \end{lstlisting}
 
 Les trames \texttt{TARGET\_VEC} (\texttt{0x020}, 7 octets) et \texttt{FIRE\_CMD}
-(\texttt{0x010}) ont été observées, correctement sérialisées, à la cadence attendue.
-\textbf{La sérialisation, les identifiants, les priorités et la logique applicative sont
-donc démontrés corrects} ; seule la couche physique est en défaut. C'est une distinction
-importante pour le repreneur : \textbf{il n'y a pas de bug à chercher dans le protocole.}
+(\texttt{0x010}) y ont été observées, correctement sérialisées, à la cadence attendue.
+\texttt{vcan0} étant vu par SocketCAN exactement comme une interface réelle, le code
+applicatif n'a eu \textbf{aucune ligne à changer} lors du passage sur \texttt{can0} physique.
+C'était le but, et cela a marché : la sérialisation, les identifiants et les priorités étaient
+justes du premier coup sur le cuivre.
 \end{verroulevé}
+
+% ---------------------------------------------------------------------
+\subsection{Les transceivers CAN étaient des contrefaçons}
+\label{sec:contrefacon}
+
+\begin{verroulevé}{Clones 5~V vendus pour des SN65HVD230 3,3~V}
+\textbf{Symptôme.} Comportement du bus \textbf{asymétrique}, ce qui n'a aucun sens sur un
+bus différentiel. Relevé du noyau sur le Jetson :
+
+\begin{lstlisting}[language=bash]
+$ ip -details -statistics link show can0
+  can state BUS-OFF (berr-counter tx 248 rx 0) restart-ms 100
+  bitrate 500000 sample-point 0.870
+  re-started  bus-errors  arbit-lost  error-warn  error-pass  bus-off
+  20362       0           0           20363       20363       20363
+  RX: bytes   packets  errors  dropped
+      772684  111909   0       1
+  TX: bytes   packets  errors  dropped
+      121076  30458    0       26
+\end{lstlisting}
+
+\textbf{Lecture du relevé.} La réception est \emph{parfaite} : \textbf{111\,909 trames, zéro
+erreur}. L'émission, elle, est morte : le compteur \texttt{TX} est figé sur la valeur
+atteinte lors du dernier test en bouclage interne, le contrôleur part en \texttt{BUS-OFF} et
+se relance 20\,363 fois. Le Jetson \emph{entend} parfaitement le STM32 ; il n'arrive pas à
+lui \emph{répondre}.
+
+\textbf{Cause racine.} Les modules \fichier{WCMCU-230}, vendus comme portant un
+\textbf{SN65HVD230} de Texas Instruments (3,3~V), sont des \textbf{contrefaçons} : boîtiers
+\textbf{poncés puis re-marqués au laser}, abritant un clone qui fonctionne en réalité en
+\textbf{5~V}. D'où l'asymétrie : la sortie 5~V du module attaque sans peine l'entrée 3,3~V du
+Jetson (réception impeccable), alors que la sortie 3,3~V du Jetson n'atteint jamais le seuil
+logique haut de l'entrée 5~V du clone (émission jamais transmise sur le bus).
+
+\textbf{Correctif.} Alimenter le module en \textbf{5~V} sur la broche sérigraphiée
+« \texttt{3V3} », puis ramener sa sortie \texttt{CRX} vers l'entrée 3,3~V du Jetson par un
+\textbf{pont diviseur résistif} 1~k$\Omega$ / 2~k$\Omega$. La sortie \texttt{CTX} du Jetson
+(3,3~V) attaque directement le module sans adaptation.
+
+\begin{avertissement}[Ne pas utiliser de convertisseur de niveau à MOSFET]
+Les petites cartes bidirectionnelles à MOSFET et résistances de tirage (celles prévues pour
+l'I\textsuperscript{2}C) sont \textbf{trop lentes pour du CAN à 500 kbit/s} : les fronts
+deviennent des « ailerons de requin » que le contrôleur du Tegra classe en bruit et ignore.
+Un simple pont diviseur, lui, n'introduit quasiment aucune capacité et garde le front franc.
+\end{avertissement}
+
+\textbf{Validation.} Le correctif a été qualifié sur un banc dédié à \textbf{deux ESP32}
+identiques avant d'être reporté sur le matériel du projet — on ne rebranche pas un montage
+douteux sur un Jetson à 300~\euro{}.
+\end{verroulevé}
+
+\noindent
+Ce verrou est le plus coûteux du projet en temps, et le seul qu'aucune quantité de relecture
+de code ne pouvait résoudre : \textbf{le défaut était dans le silicium, et le silicium
+mentait sur son propre marquage.}
 
 % =====================================================================
 \newpage
 \section{Verrous reportés}
 
 % ---------------------------------------------------------------------
-\subsection{Le bus CAN physique : les broches n'ont jamais été réclamées}
+\subsection{Le bus CAN physique : la liaison a fonctionné, puis elle a été perdue}
 \label{sec:can}
 
-\begin{verroureporte}{CAN0 du Jetson — \texttt{pinmux} non réclamé}
-\textbf{C'est le verrou bloquant du projet.} Les deux n\oe uds fonctionnent
-individuellement. Ils n'ont jamais communiqué \emph{sur du cuivre}.
+\begin{verroureporte}{CAN0 du Jetson — le routage des broches ne survit pas au démarrage à froid}
+\textbf{Le bus a bel et bien fonctionné sur cuivre} : le Jetson a reçu \textbf{111\,909
+trames du STM32, sans une seule erreur} (§\ref{sec:contrefacon}). Ce qui n'a pas été refermé
+avant la fin du projet, c'est de rendre ce routage \textbf{persistant} — et de reconfirmer le
+sens Jetson~$\rightarrow$~STM32 après la réparation des transceivers.
 \end{verroureporte}
 
-\paragraph{Symptôme.} L'interface \fichier{can0} n'apparaît jamais. La vérification du
-multiplexeur ne renvoie \textbf{rien} :
+\paragraph{Ce qui est acquis, et qu'il ne faut pas refaire.} Le relevé du noyau du
+21~mars~2026 est sans ambiguïté : \texttt{can0} est bien l'interface du contrôleur matériel
+du Tegra (\texttt{parentdev c310000.mttcan}), à 500~kbit/s, et elle a encaissé
+\textbf{111\,909 trames, 0 erreur de réception}, soit environ \textbf{une heure et demie} de
+trafic \texttt{POS\_MOTION} continu à 20~Hz. Un tel compteur ne peut pas être produit par
+l'écho local de SocketCAN : \textbf{ces trames sont physiquement arrivées par le cuivre.} Il
+en découle, sans autre preuve à apporter, que le \emph{pinmux}, le câblage, la terminaison et
+le \emph{bit timing} étaient \textbf{corrects}.
+
+\paragraph{Ce qui restait ouvert.} Deux points, et deux seulement :
+\begin{enumerate}
+  \item \textbf{Le sens Jetson $\rightarrow$ STM32 n'a jamais été confirmé de bout en bout}
+        \emph{après} la correction des transceivers contrefaits. Avant correction, il était
+        en \texttt{BUS-OFF} — ce qui est \emph{expliqué} par la contrefaçon, mais n'a pas été
+        re-testé une fois le pont diviseur en place.
+  \item \textbf{L'\emph{overlay} de \emph{pinmux} a disparu de \fichier{/boot}.} Après le
+        recâblage et un démarrage à froid, le Jetson est devenu sourd. Diagnostic final :
+\end{enumerate}
 
 \begin{lstlisting}[language=bash]
+$ find /boot -name "*can*.dtbo"
+$                                     # <- vide : le .dtbo n'est plus la
+
 $ sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
-$          # <- aucune sortie : les broches PAA ne sont meme pas listees
+pin 0 (CAN0_DOUT_PAA0): (MUX UNCLAIMED) (GPIO UNCLAIMED)
+pin 1 (CAN0_DIN_PAA1):  (MUX UNCLAIMED) (GPIO UNCLAIMED)
 \end{lstlisting}
+
+\noindent
+Le contrôleur \texttt{mttcan} se charge toujours et \texttt{can0} existe toujours — mais ses
+broches ne sont plus \emph{réclamées} : le silicium CAN n'est plus relié à l'en-tête 40
+broches. Le nœud émet dans le vide. \textbf{Ce n'est pas une régression logicielle : c'est le
+binaire d'\emph{overlay} qui n'est plus là où le \emph{bootloader} va le chercher.}
 
 \paragraph{Le piège de brochage.} Sur le Tegra 234 :
 \begin{center}
@@ -264,16 +370,18 @@ $          # <- aucune sortie : les broches PAA ne sont meme pas listees
 \end{center}
 
 \noindent
-Assigner la fonction \texttt{can0} aux broches \broche{PAA2}/\broche{PAA3} revient à
-demander au silicium de router \emph{CAN0 sur les broches physiques de CAN1}. Le pilote
-\texttt{pinctrl} détecte l'incohérence et \textbf{s'arrête}, ce qui explique que les broches
-ne soient plus listées du tout.
+Assigner la fonction \texttt{can0} aux broches \broche{PAA2}/\broche{PAA3} revient à demander
+au silicium de router \emph{CAN0 sur les broches physiques de CAN1}. C'est l'erreur classique
+sur cette carte, et elle ne produit aucun message d'erreur : simplement, plus rien ne sort.
 
-\paragraph{État final laissé sur la machine.} L'\emph{overlay} chargé au démarrage est
-\fichier{/boot/can0-pinmux.dtbo}, dont l'en-tête interne annonce
-« \texttt{CAN0 Hardware Override V5} » — cinquième itération. Il déclare bien les n\oe uds
-corrects (\texttt{can0\_dout\_paa0}, \texttt{can0\_din\_paa1}, fonction \texttt{can0}) et
-tente de neutraliser les n\oe uds \texttt{paa2}/\texttt{paa3}. \textbf{Il n'a pas suffi.}
+\paragraph{L'\emph{overlay} à réinstaller.} Le bon binaire est conservé dans le dépôt :
+\fichier{jetson/dts/can0-pinmux.dtbo}, dont l'en-tête interne annonce
+« \texttt{CAN0 Hardware Override V5} » — cinquième itération. Il déclare les n\oe uds corrects
+(\texttt{can0\_dout\_paa0}, \texttt{can0\_din\_paa1}, fonction \texttt{can0}) et neutralise
+\texttt{paa2}/\texttt{paa3}. \textbf{C'est cette version qui a produit les 111\,909 trames.}
+Elle doit être recopiée dans \fichier{/boot} et référencée dans la ligne \texttt{OVERLAYS}
+de \fichier{/boot/extlinux/extlinux.conf} (modèle fourni :
+\fichier{jetson/extlinux.conf.reference}).
 
 \begin{avertissement}[Une hypothèse répandue — et fausse]
 La dernière piste explorée avant l'arrêt du projet attribuait la panne à un \emph{overlay}
@@ -290,27 +398,45 @@ Ne pas perdre de temps à « réparer » ce fichier : il n'est pas en cause, et 
 casserait la synchronisation stéréo. La cause est ailleurs.
 \end{avertissement}
 
-\paragraph{Piste recommandée pour la reprise.} Par ordre de coût croissant :
+\paragraph{Procédure de reprise.} Il ne s'agit pas d'une recherche, mais d'une remise en
+état. Dans l'ordre :
 \begin{enumerate}
-  \item \textbf{Vérifier le domaine de \emph{pinmux}.} Les broches \broche{PAA} du Tegra
-        appartiennent au contrôleur \textbf{AON} (\emph{always-on}), distinct du
-        \emph{pinmux} principal. Un \emph{overlay} qui cible le mauvais contrôleur n'a
-        aucun effet — et c'est cohérent avec l'absence totale des broches dans
-        \texttt{debugfs}. \textbf{C'est la piste la plus probable.} Vérifier que
-        l'\emph{overlay} cible bien \texttt{pinmux\_aon} et non \texttt{pinmux}.
-  \item \textbf{Confirmer que le module noyau \texttt{mttcan} se charge}
-        (\texttt{modprobe mttcan}, puis \texttt{dmesg | grep -i can}). Le contrôleur CAN du
-        Tegra en dépend.
-  \item \textbf{Contourner le SoC.} Solution de repli assumée et rapide : un contrôleur CAN
-        \textbf{externe sur SPI} (MCP2515 ou équivalent). On abandonne le CAN natif du
-        Tegra, mais on obtient un bus fonctionnel sans livrer bataille au \emph{pinmux}.
-        \textbf{Si la reprise est sous contrainte de temps, commencer par là.}
+  \item \textbf{Réinstaller l'\emph{overlay}} : copier \fichier{jetson/dts/can0-pinmux.dtbo}
+        dans \fichier{/boot}, l'ajouter à la ligne \texttt{OVERLAYS} de
+        \fichier{extlinux.conf}, redémarrer.
+  \item \textbf{Vérifier que les broches sont réclamées} — c'est le contrôle qui tranche :
+\begin{lstlisting}[language=bash]
+sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
+# ATTENDU : pin 0 (CAN0_DOUT_PAA0): c310000.mttcan  <- reclamee
+# ECHEC   : pin 0 (CAN0_DOUT_PAA0): (MUX UNCLAIMED) <- overlay non applique
+\end{lstlisting}
+  \item \textbf{Remonter le montage transceiver} avec le correctif 5~V + pont diviseur
+        (§\ref{sec:contrefacon}) — \emph{et non} le câblage 3,3~V « théorique ».
+  \item \textbf{Confirmer les deux sens} : \texttt{candump can0} doit montrer les trames
+        \texttt{030} du STM32 \emph{et} le compteur \texttt{TX} du Jetson doit progresser
+        sans partir en \texttt{BUS-OFF}.
 \end{enumerate}
 
-\paragraph{Ce que ce verrou n'est pas.} Il n'est ni logiciel, ni protocolaire. Le câblage
-(WCMCU-230 / SN65HVD230, 3,3~V, broches 29/31, masse commune, terminaison 120~$\Omega$) est
-correct et documenté. Le code est validé sur \texttt{vcan0}. \textbf{Seul le routage des
-broches est en cause.}
+\begin{avertissement}[Le piège qui a coûté le bus : une mise à jour efface \fichier{/boot}]
+Une mise à jour de JetPack, ou toute opération qui régénère \fichier{/boot}, peut
+\textbf{supprimer silencieusement} le \fichier{.dtbo} sans toucher à la ligne
+\texttt{OVERLAYS} qui le référence. Le \emph{bootloader} ne trouve pas le fichier,
+\textbf{n'émet aucune erreur}, et démarre sans l'\emph{overlay}. Le système est alors
+\emph{exactement} identique à un système sain — sauf que le CAN est muet.
+
+Après \textbf{toute} mise à jour du Jetson, vérifier :
+\texttt{find /boot -name "*can*.dtbo"}. Si la commande ne renvoie rien, le bus est mort et
+c'est la seule chose à réparer.
+\end{avertissement}
+
+\paragraph{Repli, si le \emph{pinmux} résiste.} Un contrôleur CAN \textbf{externe sur SPI}
+(MCP2515 ou équivalent) donne un bus fonctionnel sans dépendre du \emph{pinmux} du Tegra ni
+de son arbre de périphériques. On perd le CAN natif ; on gagne l'immunité aux mises à jour de
+JetPack. \textbf{Sous contrainte de temps, c'est l'option raisonnable.}
+
+\paragraph{Ce que ce verrou n'est pas.} Il n'est ni logiciel, ni protocolaire, ni un défaut
+de conception du bus. Le protocole a tourné sur le cuivre. \textbf{Seule la persistance du
+routage des broches est en cause.}
 
 % ---------------------------------------------------------------------
 \newpage
@@ -536,6 +662,12 @@ CAN0 à \broche{PAA2}/\broche{PAA3} » &
 (32 et 33). Aucune configuration CAN. \textbf{Le projet s'est arrêté sur cette fausse
 piste.} \\
 \addlinespace
+« Le bus CAN est muet : l'autre n\oe ud est en mode \emph{listen-only} / votre
+convertisseur de niveau est trop lent / votre code d'init est faux » &
+\textbf{Toutes fausses.} Le défaut était dans le \emph{silicium} : des transceivers
+contrefaits (§\ref{sec:contrefacon}). Aucune hypothèse logicielle ne pouvait y mener. La
+cause a été trouvée en \textbf{regardant physiquement la puce} — poncée, re-marquée. \\
+\addlinespace
 « La chirurgie réseau donnera un détecteur équivalent » &
 Mathématiquement exact, \textbf{opérationnellement faux} : l'équivalence formelle ne
 compense pas l'absence d'information couleur. \\
@@ -545,10 +677,19 @@ compense pas l'absence d'information couleur. \\
 
 \paragraph{La règle qui s'en dégage.} Sur ce projet, \textbf{toutes} les avancées matérielles
 décisives sont venues d'une \emph{mesure} qui contredisait une hypothèse — pas d'un
-raisonnement. Le conflit \broche{PA2}/série a été trouvé en débranchant. Le
-\emph{pinmux} CAN a été caractérisé en interrogeant \texttt{debugfs}, pas en raisonnant sur
-des registres. La fausse piste finale aurait été écartée en \emph{ouvrant le fichier
-incriminé} — ce qui prend deux minutes, et n'a pas été fait.
+raisonnement. Le conflit \broche{PA2}/série a été trouvé en débranchant. La contrefaçon des
+transceivers a été trouvée \textbf{à l'\oe il, sur la puce} — après que le modèle eut proposé,
+avec assurance, quatre causes logicielles successives toutes fausses. La fausse piste finale
+sur l'\emph{overlay} aurait été écartée en \emph{ouvrant le fichier incriminé} — ce qui prend
+deux minutes, et n'a pas été fait.
+
+\medskip
+\noindent
+Le contre-exemple est instructif : c'est la seule fois où le relevé brut a été lu \emph{pour
+ce qu'il disait} — une réception parfaite face à une émission morte — que la cause est
+devenue évidente. \textbf{Un bus différentiel ne peut pas être asymétrique. C'est l'anomalie
+qui portait la réponse}, et elle était visible dès le premier
+\texttt{ip -s link show can0}.
 
 \begin{note}[Recommandation au repreneur]
 Utilisez ces outils pour écrire du code : le gain est réel et considérable. Mais devant un
@@ -566,9 +707,10 @@ piste bien argumentée.
 \toprule
 \textbf{\#} & \textbf{Chantier} & \textbf{Pourquoi dans cet ordre} \\
 \midrule
-1 & \textbf{Débloquer le CAN physique} &
-Rien d'intégré n'est démontrable tant que les n\oe uds ne se parlent pas. Piste : domaine
-\emph{pinmux} \textbf{AON}. Repli rapide : contrôleur CAN externe sur SPI. \\
+1 & \textbf{Remettre le CAN physique en service} &
+Le bus a déjà fonctionné (111\,909 trames, 0 erreur). Il ne reste qu'à réinstaller
+\fichier{can0-pinmux.dtbo} dans \fichier{/boot} et à remonter les transceivers avec le
+correctif 5~V. \textbf{C'est une remise en état, pas une recherche.} \\
 \addlinespace
 2 & \textbf{Implémenter le watchdog} &
 Condition \emph{sine qua non} de toute mise sous tension du laser de Classe 4.

@@ -1,7 +1,7 @@
 # Annexe — Nomenclature (BOM)
 
-Nomenclature du prototype **mk.2**, telle qu'effectivement approvisionnée.
-Total ≈ **830 € TTC** (18 références).
+Nomenclature du prototype **mk.2**, **telle que réellement montée**.
+Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consigné.
 
 ---
 
@@ -10,11 +10,17 @@ Total ≈ **830 € TTC** (18 références).
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
 | Jetson Orin Nano Super Developer Kit | RS Online | 1 | 311,18 € |
-| B-G431B-ESC1 — *voir divergence n°1* | Mouser | 2 | 16,31 € |
-| ESP32-C3 SuperMini — *nœud de coordination, non utilisé* | AliExpress | 1 | 4,29 € |
+| **NUCLEO-G431RB** — *MCU du `motion_node`* | ST | 1 | — |
+| **X-NUCLEO-IHM16M1** (STSPIN830) — *étages de puissance* | ST | 2 | — |
+| ESP32-C3 SuperMini — *nœud de coordination, jamais implémenté* | AliExpress | 1 | 4,29 € |
 | Alimentation AC-DC 24 V / 150 W | AliExpress | 1 | 5,29 € |
-| Transceivers CAN WCMCU-230 / SN65HVD230 (lot de 10) | AliExpress | 1 | 5,19 € |
+| Transceivers CAN WCMCU-230 (lot de 10) — ⚠️ **contrefaits, voir ci-dessous** | AliExpress | 1 | 5,19 € |
 | TMC2209 (lot de 4) — *pilotage collimation* | AliExpress | 1 | 9,09 € |
+
+> **Les deux shields IHM16M1 sont câblés côte à côte, et non empilés sur la Nucleo.**
+> Ce n'est pas un détail de confort : empilés, la broche `A5` (qu'il faut tirer à 3,3 V pour
+> sortir le STSPIN830 de veille) est reliée à `PC0`, qui sert de retour de courant `SENSEU`
+> au moteur 2. L'empilement saturerait cette entrée et casserait la boucle de courant.
 
 ## Vision
 
@@ -47,21 +53,32 @@ Total ≈ **830 € TTC** (18 références).
 
 ---
 
-## ⚠️ Deux divergences entre la nomenclature et le matériel réellement utilisé
+## ⚠️ Les transceivers CAN du lot sont des contrefaçons
 
-### 1. Cartes de commande moteur
+Les modules **WCMCU-230** de ce lot sont vendus comme portant un **SN65HVD230** de Texas
+Instruments (3,3 V). Ce sont des **clones 5 V** : les boîtiers ont été **poncés puis
+re-marqués au laser**.
 
-La nomenclature liste **2× B-G431B-ESC1**. Mais le firmware livré cible en réalité une
-**NUCLEO-G431RB** portant **2× X-NUCLEO-IHM16M1** (STSPIN830) :
+Câblés en 3,3 V comme le voudrait la théorie, ils donnent un bus **asymétrique** —
+réception parfaite, émission morte — ce qui est impossible sur un bus différentiel et
+constitue la signature du défaut.
 
-- `software/motion_node/platformio.ini` → `board = nucleo_g431rb`
-- `software/motion_node/include/pinout.h` → brochage des shields IHM16M1
-- `docs/annexes/cablage.md` → câblage détaillé de cette configuration
+| | Vrai SN65HVD230 | Le clone livré |
+|---|---|---|
+| Alimentation | 3,3 V | **5 V** (sur la broche sérigraphiée « 3V3 ») |
+| Sortie `CRX` | 3,3 V, directe | **5 V** → **pont diviseur 1 kΩ / 2 kΩ** vers le Jetson |
+| Entrée `CTX` | 3,3 V | Le 3,3 V du Jetson suffit à l'attaquer, sans adaptation |
 
-**Suivre le code, pas la nomenclature.** La ligne B-G431B-ESC1 correspond
-vraisemblablement à une intention antérieure abandonnée.
+> **Ne pas utiliser de convertisseur de niveau à MOSFET.** Ces petites cartes
+> bidirectionnelles (prévues pour l'I²C) sont trop lentes à 500 kbit/s : les fronts
+> s'arrondissent et le contrôleur CAN du Tegra les rejette comme du bruit. Un pont diviseur
+> résistif n'a quasiment aucune capacité et garde le front franc.
 
-### 2. Le laser
+**Vérifier lequel des deux vous avez avant de câbler.** Voir *Difficultés techniques*.
+
+---
+
+## Le laser : 5 W au calcul, 5,5 W à l'achat
 
 | Source | Spécification |
 |---|---|
@@ -76,7 +93,7 @@ un spot de 0,53 mm) a été mené pour 5 W, la diode physiquement présente fait
 
 ## Caractéristiques du moteur GM5208-12
 
-Source : [`hardware/mechanical/GM5208-12.json`](../../hardware/mechanical/GM5208-12.json)
+Source : [`hardware/mechanical/motor/GM5208-12.json`](../../hardware/mechanical/motor/GM5208-12.json)
 
 | Paramètre | Valeur |
 |---|---|
@@ -96,13 +113,15 @@ Source : [`hardware/mechanical/GM5208-12.json`](../../hardware/mechanical/GM5208
 ## Nomenclature du prototype mk.1 (pour mémoire)
 
 Le premier prototype (Cosson & Grimal, 2024/2025) utilisait un matériel radicalement
-différent, dont les limites ont motivé le mk.2 :
+différent, dont les limites ont motivé le mk.2 —
+[rapport archivé](../references/rapports/Cosson_Grimal_2025_VESPA_mk1_Pointage.pdf) :
 
 - Arduino Uno (ATmega328P — **pas de FPU**, d'où le *jitter* sur les rampes d'accélération)
-- Moteurs pas-à-pas Nema 17 + drivers A4988 (microstepping 1/32) — **décrochage**,
-  dérive cumulative
+- Moteurs pas-à-pas + shield **DRV8825** (microstepping 1/32) — **décrochage**,
+  dérive cumulative, aucun retour de position
+- Détection **YOLOv8** déportée sur PC, liaison Python ↔ Arduino par port série
 - Diode laser rouge 650 nm, **10 mW** — sans capacité de neutralisation
-- Pas de système de vision embarqué
+- **Monoculaire** : aucune mesure de distance, donc aucune collimation possible
 
 Le code de caractérisation de ce banc est conservé dans
 [`software/legacy_mk1_bench/`](../../software/legacy_mk1_bench/) : ce sont les annexes A à D

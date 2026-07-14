@@ -344,8 +344,16 @@
   type        = {Datasheet},
   url         = {https://www.arducam.com/},
   note        = {Carte porteuse assurant la compatibilité de l'OV9281 avec
-                 l'écosystème NVIDIA Jetson. Support du déclenchement
-                 externe (\emph{external trigger}) — voir l'étude dédiée
+                 l'écosystème NVIDIA Jetson. Source déterminante sur le
+                 déclenchement externe : le constructeur réserve la
+                 synchronisation matérielle multi-caméras à son accessoire
+                 propriétaire (\emph{Camarray HAT}, déclinaisons Stereoscopic
+                 et Quadrascopic), et la piste reliant la broche XVS/FSIN du
+                 capteur aux pastilles de déclenchement est coupée en sortie
+                 d'usine (emplacement 0402 non peuplé) sur les cartes vendues
+                 seules. Le projet obtient néanmoins un déclenchement stéréo
+                 matériel sur deux cartes standard, en prenant l'horloge
+                 maîtresse sur le PWM matériel du Tegra. Voir l'étude dédiée
                  \texttt{Etude\_IA\_Arducam\_UC788\_Trigger\_Externe.pdf}.},
   file        = {docs/references/datasheets/Arducam_UC-788_RevB_OV9281.pdf}
 }
@@ -455,17 +463,23 @@
 
 @mastersthesis{cosson2025vespa_mk1,
   author  = {Cosson, Lucas and Grimal, Hugo},
-  title   = {Conception d'un dispositif autonome de lutte contre le frelon
-             asiatique — prototype mk.1},
+  title   = {Dispositif de lutte contre les frelons asiatiques —
+             Système de pointage de la cible},
   school  = {ENSIL-ENSCI, Université de Limoges},
   year    = {2025},
-  type    = {Projet de fin d'études},
-  note    = {Itération précédente : détection YOLOv8 hors ligne, tourelle
-             à moteurs pas-à-pas Nema 17 pilotée par Arduino Uno, diode
-             laser récréative de quelques milliwatts. Ce sont les limites
-             de ce prototype — décrochage, jitter, dérive cumulative —
-             qui ont été caractérisées puis levées par le mk.2.
-             Encadrant : M. Michel Ousset.}
+  type    = {Étude technique, 5\textsuperscript{e} année, spécialité Mécatronique},
+  note    = {Prototype mk.1, année 2024/2025, encadré par M. Michel Ousset.
+             Détection par YOLOv8 (Ultralytics) sur flux vidéo, tourelle à
+             moteurs pas-à-pas pilotée par Arduino Uno via un shield DRV8825,
+             liaison Python/Arduino par port série, et une exploration finale
+             du portage sur GPU NVIDIA Jetson. C'est la référence fondatrice
+             du mk.2 : les limites qui y sont constatées — absence de FPU sur
+             l'ATmega328P, décrochage et dérive cumulative des pas-à-pas,
+             absence de perception de la profondeur — définissent en creux le
+             cahier des charges du mk.2 (FOC sur encodeurs absolus,
+             stéréo-vision, triangulation).
+             Document remis avec la mention « Confidentiel ».},
+  file    = {docs/references/rapports/Cosson_Grimal_2025_VESPA_mk1_Pointage.pdf}
 }
 
 @mastersthesis{delmas2026vespa_mk2,

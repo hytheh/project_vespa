@@ -1,0 +1,27 @@
+# Formats CAO et impression 3D : binaires ou quasi-binaires.
+# Git ne doit ni les diffuser comme du texte, ni toucher à leurs fins de ligne.
+
+# Maillages
+*.stl   binary
+*.3mf   binary
+*.obj   binary
+*.ply   binary
+
+# Échange CAO neutre (STEP / IGES) : texte, mais les diffs n'ont aucun sens
+# et une conversion CRLF corromprait certains exports.
+*.step  -text -diff
+*.stp   -text -diff
+*.iges  -text -diff
+*.igs   -text -diff
+
+# Formats natifs de CAO
+*.sldprt binary
+*.sldasm binary
+*.f3d    binary
+*.f3z    binary
+*.fcstd  binary
+*.scad   text
+
+# Fabrication
+*.gcode binary
+*.3mf   binary
