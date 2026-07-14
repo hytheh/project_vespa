@@ -203,6 +203,16 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
   \item \textbf{Siegman, \emph{Lasers}} \cite{siegman1986lasers} — divergence et irradiance
         du faisceau. Support du tracé de densité de puissance le long de l'axe optique
         (\fichier{simulation/optique/Laser\_Optics\_v1.m}).
+
+  \item \textbf{Keller \emph{et al.} (2020)} \cite{keller2020photonicfence} —
+        \textsc{Photonic Fence} : neutralisation au laser d'insectes \emph{en vol}, avec
+        courbes dose-réponse mesurées. Source des paramètres de tir de
+        \fichier{simulation/optique/Laser\_Optics\_v1.m} : le \textbf{choix du bleu} (les
+        longueurs d'onde visibles exigent bien moins d'exposition que le proche infrarouge)
+        et la \textbf{durée d'impulsion} de 20~ms (l'article identifie $\approx 25$~ms
+        comme durée idéale). La fluence létale retenue est celle de l'article majorée d'un
+        \textbf{facteur de sécurité}, la cible du projet étant sensiblement plus massive
+        que les insectes qui y sont testés.
 \end{itemize}
 
 % =====================================================================
