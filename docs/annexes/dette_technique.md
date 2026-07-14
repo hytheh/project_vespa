@@ -36,18 +36,6 @@ déclenchement externe (esclave).
   interroger le mode actif et appliquer un coefficient correctif aux curseurs.
 - **Fichier** : `software/tools/calib_exposition/app_EG.py`
 
-### Dépendances CMake exigées mais inutilisées
-`software/vision_node/CMakeLists.txt` impose `find_package(CUDA REQUIRED)`,
-`find_package(VPI 3.0 REQUIRED)` et un test sur `i2c/smbus.h`.
-
-- **Réalité** : le chemin de code actuel (ArUco + OpenCV + V4L2) **n'en utilise aucun**.
-  Ce sont des vestiges de la voie TensorRT abandonnée. `CameraInterface.cpp` n'inclut ni
-  I²C ni CUDA.
-- **Coût** : friction inutile à la reproduction — il faut installer CUDA, VPI et libi2c pour
-  que CMake aboutisse, sans bénéfice.
-- **Correctif** : retirer ces trois exigences, **sauf** si la reprise vise à réintroduire
-  l'inférence TensorRT — auquel cas elles redeviennent pertinentes.
-
 ### Suivi mono-cible
 `PredictiveTurretSight` porte **un seul** filtre de Kalman. Une nuée de frelons n'est pas
 gérée : ni association de données, ni priorisation, ni gestion des occlusions.
@@ -92,18 +80,11 @@ Le pilote V4L2 attend strictement `analogue_gain` (orthographe britannique). Tou
 échoue **en silence**. L'exposition fonctionnait, le gain non — d'où un diagnostic
 contre-intuitif. Correctif appliqué dans le code et les profils JSON.
 
----
+### Dépendances CMake exigées mais inutilisées ✅
+`software/vision_node/CMakeLists.txt` imposait `find_package(CUDA REQUIRED)`,
+`find_package(VPI 3.0 REQUIRED)` et un test sur `i2c/smbus.h` — vestiges de la voie TensorRT
+abandonnée. Le chemin de code actuel (ArUco + OpenCV + V4L2) n'en utilise aucun : il fallait
+donc installer CUDA, VPI et libi2c pour que CMake aboutisse, **sans bénéfice**.
 
-## Nettoyage du dépôt effectué à la clôture
-
-Pour mémoire, l'état livré diffère de l'état de travail sur les points suivants :
-
-- **Marqueurs de conflit de fusion** (`<<<<<<< HEAD`) résolus dans `vision_can.h` et
-  `vision_can.cpp` — ils étaient **commités** sur `main` et rendaient le nœud de vision
-  non compilable en l'état.
-- **Environnements virtuels Python** (`venv/`, `venv_liveview/`) retirés du suivi Git : ils
-  étaient partiellement versionnés. Les recréer avec les scripts `run_*.sh`.
-- **Artefacts de build** (`build/`, `builds/`, `*.pgm`) retirés du suivi.
-- `turret_tracker.cpp.bak` supprimé (remplacé par `stereo_tracker.cpp`).
-- Arborescence réorganisée : `docs/`, `jetson/`, `simulation/`, `software/tools/`,
-  `software/legacy_mk1_bench/`.
+**Correctif** : les trois exigences sont retirées ; elles restent **en commentaire** en tête du
+`CMakeLists.txt`, à réactiver telles quelles si une reprise réintroduit l'inférence sur GPU.

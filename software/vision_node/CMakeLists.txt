@@ -5,18 +5,20 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # --- Dependencies ---
-find_package(CUDA REQUIRED)
-find_package(OpenCV REQUIRED) 
-find_package(VPI 3.0 REQUIRED)
+find_package(OpenCV REQUIRED)
 
-# Check for i2c-dev
-find_path(I2C_INCLUDE_DIR i2c/smbus.h)
-if(NOT I2C_INCLUDE_DIR)
-    message(FATAL_ERROR "i2c/smbus.h not found. Run: sudo apt install libi2c-dev")
-endif()
-
-# DeepStream Paths
-set(DS_PATH "/opt/nvidia/deepstream/deepstream-7.1/sources/includes")
+# Le chemin de code actuel (ArUco + OpenCV + V4L2) n'utilise ni CUDA, ni VPI, ni DeepStream :
+# ce sont des vestiges de la voie d'inference TensorRT abandonnee (cf. README, « Reconnaissance
+# biologique »). Les exiger ici obligeait a installer toute la pile pour rien.
+# A reactiver tel quel si une reprise reintroduit l'inference sur GPU :
+#
+#   find_package(CUDA REQUIRED)
+#   find_package(VPI 3.0 REQUIRED)
+#   find_path(I2C_INCLUDE_DIR i2c/smbus.h)
+#   if(NOT I2C_INCLUDE_DIR)
+#       message(FATAL_ERROR "i2c/smbus.h not found. Run: sudo apt install libi2c-dev")
+#   endif()
+#   set(DS_PATH "/opt/nvidia/deepstream/deepstream-7.1/sources/includes")
 
 # --- Link Directories ---
 # Explicitly add the Tegra library path for JetPack 6
@@ -109,4 +111,4 @@ target_include_directories(vision_node PRIVATE
 # Pure, highly optimized headless binary (No UI, No ZeroMQ)
 target_link_libraries(vision_node ${OpenCV_LIBS})
 
-message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2).")
+message(STATUS "VESPA Build Configured for Jetson Orin Nano (JetPack 6.2.1).")
