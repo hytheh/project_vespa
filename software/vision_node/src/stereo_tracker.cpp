@@ -17,6 +17,7 @@
 #include "ArUcoTracker.h"
 #include "StereoTriangulator.h"
 #include "PredictiveTurretSight.h" // INJECTED KALMAN FILTER
+#include "config_path.h"
 
 #ifdef DEBUG_MODE
 #include <zmq.h>
@@ -65,7 +66,7 @@ int main()
     std::signal(SIGINT, signalHandler);
     std::cout << "=== VESPA Live Stereo Tracking Pipeline ===\n";
 
-    std::string stereo_config_path = "/home/hytheh/project_vespa/software/vision_node/config/stereovision_settings.json";
+    std::string stereo_config_path = resolveConfigPath("stereovision_settings.json");
     std::ifstream file(stereo_config_path);
     if (!file.is_open())
         return -1;
@@ -102,7 +103,7 @@ int main()
     zmq_bind(zmq_publisher, "tcp://*:5556");
 #endif
 
-    std::string cam_settings_path = "/home/hytheh/project_vespa/software/vision_node/config/camera_settings.json";
+    std::string cam_settings_path = resolveConfigPath("camera_settings.json");
     HardwareSyncController hal("/dev/video0", "/dev/video1", cam_settings_path);
     if (!hal.initializeRig())
         return -1;

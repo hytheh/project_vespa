@@ -5,6 +5,7 @@
  */
 
 #include "HardwareSyncController.h"
+#include "config_path.h"
 #include <iostream>
 #include <cmath>
 #include <thread>
@@ -14,8 +15,8 @@ int main()
 {
     std::cout << "=== VESPA TEST: STEREO HARDWARE SYNCHRONIZATION (UPGRADED) ===" << std::endl;
 
-    // Use the definitive config path we've been tuning
-    std::string configPath = "/home/hytheh/project_vespa/software/vision_node/config/camera_settings.json";
+    // Resolve the config path relative to the executable (no hardcoded username).
+    std::string configPath = resolveConfigPath("camera_settings.json");
     VESPA::HardwareSyncController stereoRig("/dev/video0", "/dev/video1", configPath);
 
     if (!stereoRig.initializeRig())

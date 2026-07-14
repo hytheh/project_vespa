@@ -13,6 +13,9 @@ from flask import Flask, render_template, request, jsonify, Response
 import json
 import subprocess
 import os
+import re
+import sys
+import fcntl
 import cv2
 import numpy as np
 import threading
@@ -22,10 +25,34 @@ import atexit
 
 app = Flask(__name__)
 
-# --- Configuration Paths ---
-MAIN_CONFIG_PATH = "/home/hytheh/project_vespa/software/vision_node/config/camera_settings.json"
-ACTIVE_PROFILE_PATH = "/home/hytheh/project_vespa/software/vision_node/config/.active_profile"
-PROFILES_DIR = "/home/hytheh/project_vespa/software/vision_node/config/profiles"
+# --- Configuration Paths (derived from this script's location, no hardcoded user) ---
+_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+_CONFIG_DIR = os.path.normpath(os.path.join(_SCRIPT_DIR, "..", "..", "vision_node", "config"))
+MAIN_CONFIG_PATH = os.path.join(_CONFIG_DIR, "camera_settings.json")
+ACTIVE_PROFILE_PATH = os.path.join(_CONFIG_DIR, ".active_profile")
+PROFILES_DIR = os.path.join(_CONFIG_DIR, "profiles")
+
+# --- Hardware mutex (same lock file the C++ HAL uses) ---
+HARDWARE_LOCK_PATH = "/tmp/vespa_hardware.lock"
+_hardware_lock_fd = None
+
+# V4L2 controls this tool is allowed to set. Anything else is rejected, so a
+# crafted control name can never reach the shell / driver.
+ALLOWED_V4L2_CONTROLS = {
+    "exposure", "analogue_gain", "gain", "horizontal_flip", "vertical_flip", "trigger_mode"
+}
+
+def acquire_hardware_lock():
+    """Take the exclusive VESPA hardware lock so this tool cannot fight the C++
+    vision node over the I2C/V4L2 bus. Exits if another process holds it."""
+    global _hardware_lock_fd
+    _hardware_lock_fd = open(HARDWARE_LOCK_PATH, "w")
+    try:
+        fcntl.flock(_hardware_lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        print("[FATAL] VESPA hardware is locked by another process "
+              "(vision_node or another calibration tool). Aborting.")
+        sys.exit(1)
 
 DEFAULT_CONFIG = {
     "camera0": {"exposure": 681, "analogue_gain": 100, "horizontal_flip": 0, "vertical_flip": 0},
@@ -41,13 +68,21 @@ DEVICE_MAP = {
     "camera1": 0  # Left Eye
 }
 
+def _write_sysfs(path, value):
+    """Write a value to a sysfs node, ignoring failure (node may be absent)."""
+    try:
+        with open(path, "w") as f:
+            f.write(str(value))
+    except OSError:
+        pass
+
 def clamp_pwm_hardware():
     """!
     @brief Safely disables Jetson PWM hardware to prevent sensor triggering conflicts.
     """
     print("[INIT] Securing Jetson PWM hardware...")
-    subprocess.run("echo 0 > /sys/class/pwm/pwmchip3/pwm0/enable 2>/dev/null", shell=True)
-    subprocess.run("echo 0 > /sys/class/pwm/pwmchip3/pwm0/duty_cycle 2>/dev/null", shell=True)
+    _write_sysfs("/sys/class/pwm/pwmchip3/pwm0/enable", 0)
+    _write_sysfs("/sys/class/pwm/pwmchip3/pwm0/duty_cycle", 0)
 
 class CameraStream:
     """!
@@ -65,7 +100,8 @@ class CameraStream:
 
     def start(self):
         # Force Master Mode (Free-run) for calibration
-        subprocess.run(f"v4l2-ctl -d /dev/video{self.device_id} -c trigger_mode=0", shell=True)
+        subprocess.run(["v4l2-ctl", "-d", f"/dev/video{int(self.device_id)}",
+                        "-c", "trigger_mode=0"])
         self.cap = cv2.VideoCapture(self.device_id, cv2.CAP_V4L2)
         self.cap.set(cv2.CAP_PROP_FPS, 60)
         self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1) 
@@ -130,18 +166,38 @@ atexit.register(cleanup_hardware)
 def execute_v4l2_set(dev_id, ctrl_name, value):
     """!
     @brief Executes an atomic V4L2 I2C command via system subprocess.
-    @param dev_id The /dev/videoX node ID.
-    @param ctrl_name The string name of the V4L2 control.
-    @param value The integer or boolean value to apply.
+    @param dev_id The /dev/videoX node ID (coerced to int).
+    @param ctrl_name The string name of the V4L2 control (must be allow-listed).
+    @param value The integer or boolean value to apply (coerced to int).
+    @details Uses an argument list (no shell) and validates every field, so a
+             crafted control name or value can never be interpreted by a shell.
     """
     try:
-        if isinstance(value, bool): value = 1 if value else 0
-        cmd = f"v4l2-ctl -d /dev/video{dev_id} -c {ctrl_name}={value}"
-        subprocess.run(cmd, shell=True)
+        if ctrl_name not in ALLOWED_V4L2_CONTROLS:
+            print(f"[SECURITY] Rejected non-allow-listed control: {ctrl_name!r}")
+            return
+        if isinstance(value, bool):
+            value = 1 if value else 0
+        dev_id = int(dev_id)
+        value = int(value)
+        subprocess.run(["v4l2-ctl", "-d", f"/dev/video{dev_id}",
+                        "-c", f"{ctrl_name}={value}"])
         # 50ms delay to prevent Tegra driver from dropping sequential commands
-        time.sleep(0.05) 
+        time.sleep(0.05)
+    except (ValueError, TypeError) as e:
+        print(f"[ERROR] Set rejected (bad type): {e}")
     except Exception as e:
         print(f"[ERROR] Set failed: {e}")
+
+def safe_profile_name(name):
+    """Return a filesystem-safe profile name, or None if invalid.
+    Allows the existing space/dash style (e.g. 'P2 - dark') but blocks anything
+    that could escape PROFILES_DIR (slashes, dots, '..')."""
+    if not name or not isinstance(name, str):
+        return None
+    if not re.fullmatch(r"[\w \-]{1,64}", name):
+        return None
+    return name
 
 # --- FLASK ROUTES ---
 
@@ -200,7 +256,7 @@ def list_profiles():
 
 @app.route('/create_profile', methods=['POST'])
 def create_profile():
-    name = request.json.get('name')
+    name = safe_profile_name(request.json.get('name'))
     if not name or name == "default": return jsonify({"error": "Invalid name"}), 400
     path = os.path.join(PROFILES_DIR, f"{name}.json")
     with open(path, 'w') as f: json.dump(DEFAULT_CONFIG, f, indent=4)
@@ -208,7 +264,8 @@ def create_profile():
 
 @app.route('/load_profile/<name>', methods=['GET'])
 def load_profile(name):
-    if name == "default": return jsonify(DEFAULT_CONFIG)
+    name = safe_profile_name(name)
+    if not name or name == "default": return jsonify(DEFAULT_CONFIG)
     path = os.path.join(PROFILES_DIR, f"{name}.json")
     if os.path.exists(path):
         with open(path, 'r') as f: return jsonify(json.load(f))
@@ -248,7 +305,10 @@ def apply_and_save():
     profile_name = data.get('profile_name')
     config_data = data.get('config')
     if profile_name != "default":
-        with open(os.path.join(PROFILES_DIR, f"{profile_name}.json"), 'w') as f:
+        safe_name = safe_profile_name(profile_name)
+        if not safe_name:
+            return jsonify({"error": "Invalid profile name"}), 400
+        with open(os.path.join(PROFILES_DIR, f"{safe_name}.json"), 'w') as f:
             json.dump(config_data, f, indent=4)
     os.makedirs(os.path.dirname(MAIN_CONFIG_PATH), exist_ok=True)
     with open(MAIN_CONFIG_PATH, 'w') as f: json.dump(config_data, f, indent=4)
@@ -273,5 +333,9 @@ def index():
     return render_template('index_EG.html')
 
 if __name__ == '__main__':
+    acquire_hardware_lock()
     clamp_pwm_hardware()
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    # Bind to localhost only. This tool has no authentication and drives the
+    # camera hardware directly; reach it via the Jetson's desktop or an SSH
+    # tunnel, never by exposing it on the LAN.
+    app.run(host='127.0.0.1', port=5000, debug=False)

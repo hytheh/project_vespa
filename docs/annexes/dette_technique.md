@@ -36,6 +36,27 @@ déclenchement externe (esclave).
   interroger le mode actif et appliquer un coefficient correctif aux curseurs.
 - **Fichier** : `software/tools/calib_exposition/app_EG.py`
 
+### Triangulation du `vision_node` — repère et distorsion à valider sur le banc
+`software/vision_node/src/main.cpp` alimente le triangulateur stéréo *épars* avec les
+centroïdes ArUco **déjà tournés de 90°** en repère redressé 800×1280. Deux limites subsistent
+et doivent être **validées sur le vrai banc** avant de faire confiance à un angle de visée
+absolu :
+
+- **Distorsion non corrigée.** Les coefficients `dist_coeff_*` sont définis dans le repère
+  brut du capteur, mais `ArUcoTracker::detect()` renvoie des points déjà tournés — les
+  appliquer après rotation serait faux. Le chemin épars les ignore donc (comme le test de
+  référence `test_stereo_pipeline.cpp`). Une reprise « propre » undistord **avant** la
+  rotation, ou passe par `cv::stereoRectify` (voir `sparse_tracker.cpp`, désormais compilé,
+  qui fait la géométrie complète K/D/R/T + `triangulatePoints`).
+- **Axe de disparité vs. base physique.** Le triangulateur mesure la disparité sur l'axe
+  redressé-x, alors que la calibration place la base stéréo (`T`) majoritairement sur
+  l'autre axe. Le test synthétique et la calibration réelle supposent des géométries
+  différentes : à **reconfirmer sur le montage** avant tout tir.
+- **Corrigé au passage** : `main.cpp` configurait le triangulateur avec le point principal
+  et la focale en repère **paysage** alors que les points sont en repère **redressé** ; les
+  intrinsèques sont maintenant tournées comme `detect()` (focales permutées, `Cx,Cy`
+  remappés).
+
 ### Suivi mono-cible
 `PredictiveTurretSight` porte **un seul** filtre de Kalman. Une nuée de frelons n'est pas
 gérée : ni association de données, ni priorisation, ni gestion des occlusions.
@@ -81,10 +102,11 @@ Le pilote V4L2 attend strictement `analogue_gain` (orthographe britannique). Tou
 contre-intuitif. Correctif appliqué dans le code et les profils JSON.
 
 ### Dépendances CMake exigées mais inutilisées ✅
-`software/vision_node/CMakeLists.txt` imposait `find_package(CUDA REQUIRED)`,
-`find_package(VPI 3.0 REQUIRED)` et un test sur `i2c/smbus.h` — vestiges de la voie TensorRT
-abandonnée. Le chemin de code actuel (ArUco + OpenCV + V4L2) n'en utilise aucun : il fallait
-donc installer CUDA, VPI et libi2c pour que CMake aboutisse, **sans bénéfice**.
+`software/vision_node/CMakeLists.txt` imposait `find_package(CUDA REQUIRED)` et
+`find_package(VPI 3.0 REQUIRED)` — vestiges de la voie TensorRT abandonnée, qu'aucune cible
+n'utilise : il fallait installer CUDA et VPI pour que CMake aboutisse, **sans bénéfice**.
 
-**Correctif** : les trois exigences sont retirées ; elles restent **en commentaire** en tête du
+**Correctif** : les deux exigences sont retirées ; elles restent **en commentaire** en tête du
 `CMakeLists.txt`, à réactiver telles quelles si une reprise réintroduit l'inférence sur GPU.
+Le test sur `i2c/smbus.h` est **conservé** : les cibles HAL (`test_camera_hal`,
+`test_hardware_sync`, `sparse_tracker`) lient `i2c`.

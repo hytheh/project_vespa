@@ -112,7 +112,7 @@ Source : [`hardware/mechanical/motor/GM5208-12.json`](../../hardware/mechanical/
 | Paires de pôles | **7** |
 | Résistance statorique `Rs` | 7,48 Ω |
 | Inductance `Ls` | 4,49 mH |
-| Tension nominale | 24 V |
+| Tension nominale | 23,6 V |
 | Courant nominal | 1,5 A |
 | Vitesse max. | 504 |
 | Constante de FEM | 32,96 |
