@@ -13,7 +13,7 @@ la FOC à **3 shunts**.
 ## ⚠️ Deux pièges à connaître avant de câbler
 
 Ces deux points ne sont pas des erreurs de conception : ce sont des contraintes de la carte
-Nucleo qui ont coûté du temps et qui **invalident le manifeste de câblage d'origine**.
+Nucleo, et elles ont coûté du temps.
 
 ### 1. Le potentiomètre PAN n'est **pas** sur `PA2` — il est sur `PB14`
 
@@ -21,13 +21,9 @@ Nucleo qui ont coûté du temps et qui **invalident le manifeste de câblage d'o
 (potentiomètre). Mais sur la NUCLEO-G431RB, **`PA2` est câblée sur `USART2_TX`, la liaison
 série virtuelle du ST-LINK** (le port COM que l'on ouvre pour lire la console).
 
-Y brancher le potentiomètre revient à court-circuiter la sortie série : la console devient
-muette ou crache des caractères parasites, sans qu'aucun symptôme ne pointe vers le
-potentiomètre. Le potentiomètre PAN a donc été **déplacé sur `PB14`**.
-
-> Le manifeste historique [`cablage_motion_node.txt`](cablage_motion_node.txt) (ex-
-> `STM32_WiringManifest.txt`, conservé pour mémoire) indique encore `PA2`.
-> **Ne pas le suivre sur ce point.**
+Suivre le brochage nominal du shield revient donc à court-circuiter la sortie série : la
+console devient muette ou crache des caractères parasites, sans qu'aucun symptôme ne pointe
+vers le potentiomètre. Le potentiomètre PAN est donc sur **`PB14`**.
 
 ### 2. `PA4` ne fait pas de retour de courant — il protège le SPI
 

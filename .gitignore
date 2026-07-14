@@ -61,3 +61,4 @@ secrets.h
 
 # LaTeX: les PDF compilés sont publiés dans docs/, pas dans docs/src/
 docs/src/*.pdf
+

@@ -88,14 +88,15 @@ Trois nœuds sur un bus **CAN 2.0B à 500 kbit/s**, plus un système auxiliaire 
 - **Mouvement.** Asservissement FOC en boucle fermée des deux moteurs *pancake* GM5208-12
   sur encodeurs absolus AS5048A 14 bits. Butées logicielles, filtre de trajectoire,
   arrêt d'urgence matériel latché. Précision théorique 0,022°.
-- **Protocole CAN.** Sérialisation/désérialisation partagée, validée de bout en bout
-  **sur bus virtuel `vcan0`** (trames `TARGET_VEC` et `FIRE_CMD` observées à `candump`).
+- **Protocole CAN.** Sérialisation/désérialisation partagée, développée sur bus virtuel
+  `vcan0` puis **portée sur le bus physique sans changer une ligne**. Le Jetson a reçu
+  **111 909 trames du STM32, sans une seule erreur** (`ip -s link show can0`, 21 mars 2026).
 
 **Ce qui ne fonctionne pas, et pourquoi :**
 
 | Verrou | Nature | Détail |
 |---|---|---|
-| 🔴 **Bus CAN physique** | **Bloquant** | Les broches CAN0 du Jetson (`PAA0`/`PAA1`) ne sont **jamais réclamées** par le *pinmux* — elles n'apparaissent même pas dans `debugfs`. Piste la plus probable : elles relèvent du domaine *pinmux* **AON** (*always-on*), distinct du contrôleur principal visé par les *overlays*. Les deux nœuds sont corrects individuellement, mais **ils ne se sont jamais parlé sur du cuivre**. Repli rapide possible : contrôleur CAN externe sur SPI. |
+| 🟠 **Bus CAN — persistance** | À remettre en service | Le bus **a fonctionné** sur cuivre. Puis une mise à jour a **effacé `can0-pinmux.dtbo` de `/boot`** sans toucher à la ligne `OVERLAYS` qui le référence : le *bootloader* ne trouve rien, **n'émet aucune erreur**, et démarre sans l'*overlay*. `can0` existe toujours, mais ses broches sont `(MUX UNCLAIMED)` et le nœud émet dans le vide. **C'est une remise en état, pas une recherche** — le binaire est dans [`jetson/dts/`](jetson/dts/). Reste aussi à reconfirmer le sens émission après réparation des transceivers. |
 | 🔴 **Reconnaissance biologique** | Reporté | Le modèle **VespAI** est entraîné en RGB ; les capteurs sont monochromes. Le portage en Y8 (1 canal) produit un modèle rapide (10,3 ms, 100 fps) mais **inexploitable** : faux positifs massifs, incapacité à distinguer *V. velutina* de *V. crabro*. Remplacé par un **marqueur ArUco** servant de cible de substitution. |
 | 🔴 **Tir laser** | Reporté (sécurité) | Aucun tir n'a été effectué. Le *watchdog* qui conditionne l'autorisation de tir n'existe pas. |
 | 🔴 **Nœud de coordination** | Non commencé | Collimation dynamique, séquence de tir, watchdog : spécifiés, jamais codés. |
@@ -115,7 +116,7 @@ Le détail complet — symptômes, causes racines, correctifs — est dans
 
    | # | Chantier | Pourquoi d'abord |
    |---|---|---|
-   | 1 | **Débloquer le pinmux CAN0 du Jetson** | Rien d'intégré n'est démontrable tant que les nœuds ne communiquent pas physiquement. |
+   | 1 | **Remettre le CAN physique en service** | Réinstaller `can0-pinmux.dtbo` dans `/boot`, remonter les transceivers avec le correctif 5 V. Le bus a déjà fonctionné : c'est du remontage, pas du débogage. |
    | 2 | **Implémenter le watchdog** (ESP32) | Condition *sine qua non* de toute mise sous tension du laser Classe 4. |
    | 3 | **Constituer un jeu de données monochrome** et réentraîner un détecteur | Rend au système sa fonction biologique ; remplace le marqueur ArUco. |
    | 4 | **Collimation dynamique + essais optiques** | Loi de commande établie, mécanisme spécifié, jamais assemblé ni étalonné. |
@@ -130,8 +131,9 @@ project_vespa/
 ├── docs/                    Rapports (PDF + sources LaTeX), annexes, bibliographie, références
 │   ├── src/                 Sources LaTeX + vespa.bib + figures
 │   ├── annexes/             Câblage, protocole CAN, BOM, setup Jetson, sécurité, dette technique
-│   └── references/          Articles, datasheets, études préparatoires (PDF)
-├── hardware/                Nomenclature, mécanique (impressions 3D), moteurs, optique
+│   └── references/          Articles, datasheets, études préparatoires, rapport mk.1 (PDF)
+├── hardware/
+│   └── mechanical/          Pièces imprimées 3D : CAO (STEP), maillages, moteur — voir son README
 ├── jetson/                  Configuration système du Jetson (overlays, services CAN, extlinux)
 ├── simulation/              Scripts MATLAB de dimensionnement (vision + optique laser)
 ├── software/
