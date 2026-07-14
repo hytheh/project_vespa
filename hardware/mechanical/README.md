@@ -1,38 +1,33 @@
 # Mécanique — CAO et pièces imprimées 3D
 
-Géométrie du prototype VESPA mk.2 : les assemblages au format STEP, les maillages
-réellement imprimés, et les projets PrusaSlicer qui les ont produits.
+Géométrie du prototype VESPA mk.2 : assemblages STEP, maillages imprimés, projets
+PrusaSlicer qui les ont produits.
 
 ```
 hardware/mechanical/
 ├── cad/            assemblages STEP (AP242, mm)
 ├── print/          maillages des pièces imprimées (STL / 3MF)
-│   └── plates/     projets PrusaSlicer — les plateaux réellement lancés
+│   └── plates/     projets PrusaSlicer des plateaux lancés
 └── motor/          caractérisation du moteur GM5208-12
 ```
 
 ---
 
-## Où sont les fichiers éditables
+## Fichiers éditables
 
-La CAO a été faite sous **3DEXPERIENCE R2026x**, sur la **plateforme privée de l'école**.
-Le modèle économique de Dassault Systèmes est celui d'une *base de données* : les objets
-natifs (`3D Shape`, `Physical Product`) **n'existent pas comme fichiers** et **ne peuvent
-pas sortir de la plateforme**. Il n'y a rien à committer ici.
+La CAO est faite sous **3DEXPERIENCE R2026x**, sur la **plateforme privée de l'école**.
+Chez Dassault Systèmes les objets natifs (`3D Shape`, `Physical Product`) sont des
+enregistrements de base de données, pas des fichiers : ils ne sortent pas de la plateforme.
 
-**Les modèles paramétriques — arbre de construction, esquisses, contraintes — restent donc
-sur le 3DEXPERIENCE de l'école.** On les y retrouve en cherchant l'**item 3DX** donné dans
-les tableaux ci-dessous (colonne *Item 3DX*) : c'est à ça que sert cette colonne, et c'est
-la seule façon de rouvrir une pièce pour la modifier paramétriquement.
+**Les modèles paramétriques — arbre de construction, esquisses, contraintes — sont sur le
+3DEXPERIENCE de l'école, et nulle part ailleurs.** La colonne *Item 3DX* des tableaux
+ci-dessous donne, pour chaque pièce, le nom sous lequel elle y est enregistrée : c'est la
+clé de recherche dans la base.
 
-Ce qui **peut** sortir de la plateforme, et qui est donc ici, c'est l'export **STEP**
-(ISO 10303 AP242) : la géométrie exacte — surfaces, arêtes, topologie — lisible par
-n'importe quel logiciel de CAO (SolidWorks, Fusion, FreeCAD, Onshape, CATIA). Un repreneur
-sans accès au 3DEXPERIENCE de l'école peut **remodéliser à partir du STEP** ; il ne peut
-pas récupérer l'historique de conception.
-
-> Le STEP porte la géométrie, pas l'intention. Un maillage (`.stl`, `.3mf`) ne porte ni
-> l'une ni l'autre : il s'imprime, il ne se modifie pas.
+Ce qui sort de la plateforme, et qui est ici, est l'export **STEP** (ISO 10303 AP242) :
+géométrie exacte — surfaces, arêtes, topologie — lisible par SolidWorks, Fusion, FreeCAD,
+Onshape, CATIA. Il porte la géométrie, pas l'historique de conception. Les maillages
+(`.stl`, `.3mf`) ne portent ni l'un ni l'autre.
 
 ---
 
@@ -70,9 +65,8 @@ de l'école.
 kit de développement Jetson Orin Nano publié par NVIDIA, modélisé jusqu'aux résistances
 0402. La géométrie propre à VESPA y est marginale en volume.
 
-`cad/` ne contient **que des assemblages** — il n'existe pas d'export STEP pièce à pièce.
-Pour obtenir une pièce seule : l'isoler dans l'assemblage, ou la reprendre sur
-3DEXPERIENCE.
+`cad/` ne contient **que des assemblages** : il n'existe pas d'export STEP pièce à pièce.
+Une pièce seule s'obtient en l'isolant dans l'assemblage, ou depuis 3DEXPERIENCE.
 
 ---
 
@@ -128,8 +122,8 @@ Quantités telles que définies dans l'assemblage.
 | `Optics_LensHolderSpacer` | [`A.1`](print/VESPA_Optics_LensHolderSpacer_A.1.3mf) | `ADEL_VESPA_Temporary_LensHolderSpacer` | Cale provisoire de porte-lentille. Pièce d'appoint, n'apparaît dans aucun assemblage |
 | `Camera_CarrierB` | [`A.1`](print/VESPA_Camera_CarrierB_A.1.3mf) | `ADEL_SK_Carrier_B` | Support de carte porteuse, 53 × 56 × 4,6 mm. Absent des assemblages A.2 |
 
-**Légende :** ⬜ maillage non récupéré. La pièce est dans le STEP, mais son export
-d'impression n'a pas été retrouvé — le réexporter depuis l'assemblage.
+**Légende :** ⬜ maillage absent du dépôt. La pièce existe dans le STEP ; son export
+d'impression n'a pas été retrouvé.
 
 ---
 
@@ -138,9 +132,8 @@ d'impression n'a pas été retrouvé — le réexporter depuis l'assemblage.
 Imprimante **Prusa CORE One**, buse **0,4 mm haut débit**, **PLA**, couche **0,2 mm**,
 plateau **60 °C**.
 
-Les six fichiers de [`print/plates/`](print/plates/) sont des **projets PrusaSlicer
-complets** : ouvrir le `.3mf` restitue l'orientation de pose, les supports et le profil
-réellement utilisés.
+Les six fichiers de [`print/plates/`](print/plates/) sont des projets PrusaSlicer complets :
+le `.3mf` contient l'orientation de pose, les supports et le profil utilisés.
 
 | Plateau | Pièces | Profil | Remplissage | Périm. | Buse | Supports |
 |---|---|---|---|---:|---:|---|
@@ -151,13 +144,12 @@ réellement utilisés.
 | [`PLATE_FrontShield_tilted`](print/plates/PLATE_FrontShield_tilted.3mf) | `Turret_FrontShield`, pose inclinée | `0.20mm SPEED` | gyroïde 25 % | 3 | 225 °C | automatiques |
 | [`PLATE_BearingMount_MotorMount`](print/plates/PLATE_BearingMount_MotorMount.3mf) | `Turret_BearingMount`, `Turret_MotorMount` | `0.20mm SPEED` | grille 15 % | 2 | 225 °C | automatiques |
 
-Les deux plateaux `FrontShield` sont **deux orientations de pose essayées** pour la même
-pièce A.1.
+Les deux plateaux `FrontShield` sont deux orientations de pose de la même pièce A.1.
 
-Les pièces qui portent les moteurs et encaissent le couple sont regroupées sur le seul
-plateau en profil `STRUCTURAL` : Prusament PLA, 230 °C, 4 couches pleines en fond. Le reste
-passe en `SPEED`. *Supports peints* = supports générés uniquement sur les zones marquées
-(`support_material_auto = 0`), jamais automatiquement.
+`STRUCTURAL` est le seul profil en Prusament PLA à 230 °C, avec 4 couches pleines en fond ;
+il porte les quatre pièces qui reprennent les efforts des moteurs. Les cinq autres plateaux
+sont en `SPEED`. *Supports peints* = générés uniquement sur les zones marquées
+(`support_material_auto = 0`).
 
 ---
 
