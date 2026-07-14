@@ -30,7 +30,7 @@ Antonin Delmas, Clément Desmedt, Clément Gilson — encadrement : Michel Ousse
 |---|---|
 | **[Rapport technique](docs/Rapport_technique.pdf)** | Tout ce qu'il faut pour **reproduire** le système : matériel, câblage, système d'exploitation, firmware, compilation, calibration, mise en route. |
 | **[Difficultés techniques](docs/Difficultes_techniques.pdf)** | Les **verrous non triviaux** rencontrés : ceux qui ont été levés (et comment), ceux qui ont été reportés (et pourquoi). À lire avant toute reprise. |
-| **[Bibliographie](docs/Bibliographie.pdf)** | Bibliographie reconstituée du projet (biologie, vision, commande, optique, sécurité laser, matériel). Source BibTeX : [`docs/src/vespa.bib`](docs/src/vespa.bib). |
+| **[Bibliographie](docs/Bibliographie.pdf)** | Sources du projet (biologie, vision, commande, optique, sécurité laser, matériel), chacune annotée de ce qu'elle a déterminé. Source BibTeX : [`docs/src/vespa.bib`](docs/src/vespa.bib). |
 | [Rapport de PFE (soutenance)](docs/Rapport_PFE_2026_VESPA.pdf) | Le rapport rendu à la soutenance (mars 2026). Document historique, conservé tel quel. |
 
 Annexes techniques (formats légers, tenus à jour avec le code) :
@@ -197,6 +197,6 @@ Le dispositif de tir de ce dépôt est **incomplet et non validé**. Voir
 Ce projet a été développé avec une assistance importante de modèles de langage (rédaction,
 débogage, état de l'art), comme documenté dans le préambule du rapport de PFE. Les archives
 de conversations ayant mené à la résolution des verrous clés ont été conservées et ont servi
-à reconstituer le document [Difficultés techniques](docs/Difficultes_techniques.pdf).
+à rédiger le document [Difficultés techniques](docs/Difficultes_techniques.pdf).
 Plusieurs verrous majeurs — transceivers CAN contrefaits, impédance cachée du GPIO,
 profondeur de champ létale réelle — ont été identifiés **contre** l'avis de l'IA, par la mesure.
