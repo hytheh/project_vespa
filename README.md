@@ -129,7 +129,7 @@ Le détail complet — symptômes, causes racines, correctifs — est dans
 ```
 project_vespa/
 ├── docs/                    Rapports (PDF + sources LaTeX), annexes, bibliographie, références
-│   ├── src/                 Sources LaTeX + vespa.bib + figures
+│   ├── src/                 Sources LaTeX + vespa.bib + figures (figs/)
 │   ├── annexes/             Câblage, protocole CAN, BOM, setup Jetson, sécurité, dette technique
 │   └── references/          Articles, datasheets, études préparatoires, rapport mk.1 (PDF)
 ├── hardware/
@@ -137,14 +137,13 @@ project_vespa/
 │                            (les modèles éditables restent sur le 3DEXPERIENCE de l'école)
 ├── jetson/                  Configuration système du Jetson (overlays, services CAN, extlinux)
 ├── simulation/              Scripts MATLAB de dimensionnement (vision + optique laser)
-├── software/
-│   ├── common/              Protocole CAN partagé (C, portable STM32/ESP32/Linux)
-│   ├── vision_node/         Jetson — C++17 / OpenCV / V4L2 / SocketCAN (CMake)
-│   ├── motion_node/         STM32G431RB — SimpleFOC / FDCAN (PlatformIO)
-│   ├── coordination_node/   ESP32 — non implémenté (spécification uniquement)
-│   ├── tools/               Outils de maintenance : calibration stéréo, exposition, viewport
-│   └── legacy_mk1_bench/    Banc de caractérisation mk.1 (Arduino Uno) — annexes du rapport PFE
-└── tools/                   Scripts utilitaires du dépôt
+└── software/
+    ├── common/              Protocole CAN partagé (C, portable STM32/ESP32/Linux)
+    ├── vision_node/         Jetson — C++17 / OpenCV / V4L2 / SocketCAN (CMake)
+    ├── motion_node/         STM32G431RB — SimpleFOC / FDCAN (PlatformIO)
+    ├── coordination_node/   ESP32 — non implémenté (spécification uniquement)
+    ├── tools/               Outils de maintenance : calibration stéréo, exposition, viewport
+    └── legacy_mk1_bench/    Banc de caractérisation mk.1 (Arduino Uno) — annexes du rapport PFE
 ```
 
 ---

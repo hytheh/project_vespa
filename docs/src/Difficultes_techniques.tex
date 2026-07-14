@@ -446,6 +446,19 @@ routage des broches est en cause.}
 \textbf{Le système ne sait pas reconnaître un frelon.} Il suit un marqueur ArUco.
 \end{verroureporte}
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[height=0.62\textheight]{arch_software.png}
+  \caption{\textbf{Le pipeline de vision tel qu'il était prévu — et tel qu'il n'a pas été
+  livré.} Le bloc \emph{TensorRT Context} / \emph{Inference engine} devait porter la
+  détection biologique sur GPU. C'est précisément ce bloc qui est tombé : il est remplacé,
+  dans le système livré, par une détection de \textbf{marqueur ArUco} sur CPU (OpenCV). Tout
+  le reste de la chaîne — triangulation stéréo, filtre de Kalman, sérialisation SocketCAN —
+  est en revanche opérationnel et conforme à ce schéma. Le n\oe ud de vision ne dépend donc
+  aujourd'hui \textbf{ni de CUDA, ni de TensorRT, ni de VPI}.}
+  \label{fig:arch-software}
+\end{figure}
+
 \paragraph{L'enchaînement des contraintes.} Ce verrou n'est pas une erreur : c'est une
 cascade logique dont chaque maillon est justifié, et dont le résultat est une impasse.
 

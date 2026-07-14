@@ -64,6 +64,17 @@ Les n\oe uds communiquent sur un \textbf{bus CAN 2.0B à 500~kbit/s} (trames sta
 (\fichier{docs/annexes/protocole\_can.md}) ; sa définition normative est
 \fichier{software/common/can\_protocol.h}.
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=\linewidth]{arch_global.pdf}
+  \caption{Architecture système. Les trois n\oe uds échangent sur le bus CAN ; le
+  \emph{watchdog}, porté par le n\oe ud de coordination, commande la coupure de
+  l'alimentation générale. \textbf{Le n\oe ud de coordination — donc le watchdog et le tir —
+  n'a jamais été implémenté} : c'est la raison pour laquelle le laser n'a jamais été mis
+  sous tension.}
+  \label{fig:arch-global}
+\end{figure}
+
 % =====================================================================
 \section{Nomenclature (BOM)}
 \label{sec:bom}
@@ -190,7 +201,7 @@ les \emph{overlays} d'arbre de périphériques et \textbf{détruit la synchronis
 \subsection{Système de base}
 
 \begin{enumerate}
-  \item Flasher le \textbf{JetPack 6.2} (L4T r36.4) sur le Jetson Orin Nano Super, via
+  \item Flasher le \textbf{JetPack 6.2.1} (L4T r36.4) sur le Jetson Orin Nano Super, via
         NVIDIA SDK Manager. Racine sur NVMe recommandée (c'est la configuration d'origine).
   \item Installer le \textbf{noyau et les pilotes Arducam} pour l'OV9281, en suivant la
         procédure du constructeur. Cela installe un noyau dédié dans
@@ -466,6 +477,15 @@ parallélépipède de \textbf{500~mm $\times$ 310~mm $\times$ 300~mm}
 (longueur $\times$ largeur $\times$ hauteur). La tourelle est placée \textbf{en surplomb},
 de sorte que le tir soit dirigé vers le sol.
 
+\begin{figure}[htbp]
+  \centering
+  \includegraphics[width=0.75\linewidth]{arch_space.pdf}
+  \caption{La \emph{killbox} : restriction volontaire de l'environnement. Le système
+  n'engage une cible que dans ce volume, ce qui borne à la fois la portée du tir et le
+  domaine où la précision de pointage a été caractérisée.}
+  \label{fig:killbox}
+\end{figure}
+
 \paragraph{Optique.} Le compromis porte sur le GSD (\emph{Ground Sampling Distance}) : il ne
 doit pas dépasser $\approx 0{,}5$~mm/px pour rester exploitable par un modèle de détection.
 Pour un capteur $1\,280 \times 800$, le script
@@ -473,6 +493,67 @@ Pour un capteur $1\,280 \times 800$, le script
 \[
   f = 6~\text{mm}, \qquad d_n = 990~\text{mm}
 \]
+
+\paragraph{Chemin optique du tir.} Le faisceau de la diode est collimaté par \textbf{L1}
+(lentille fixe), puis focalisé par \textbf{L2} (\textbf{lentille mobile}) sur la cible. C'est
+le déplacement de L2 le long de l'axe qui réalise la \textbf{collimation dynamique} :
+il déplace le point de focalisation avec la distance de la cible, de manière à concentrer la
+puissance sur la cible et \emph{seulement} sur elle. La loi de commande $x_{L2} = f(x_c)$ est
+établie dans \fichier{simulation/optique/Laser\_Optics\_v1.m} ; le mécanisme est spécifié mais
+\textcolor{vespared}{\textbf{n'a jamais été assemblé ni étalonné}} (il relève du n\oe ud de
+coordination, non implémenté).
+
+\begin{figure}[htbp]
+  \centering
+  \begin{tikzpicture}[x=1cm,y=1cm,>=latex,font=\small]
+    % --- axe optique ---
+    \draw[dashed,gray] (-0.4,0) -- (13.2,0);
+
+    % --- source ---
+    \fill (0,0) circle (2pt);
+    \node[above=3pt] at (0,0) {\footnotesize source};
+
+    % --- L1 (fixe) ---
+    \draw[very thick,<->] (2,-1.1) -- (2,1.1);
+    \node[above] at (2,1.1) {\textbf{L1}};
+    \node[below] at (2,-1.1) {\footnotesize fixe};
+
+    % --- L2 (mobile) ---
+    \draw[very thick,<->] (5,-1.7) -- (5,1.7);
+    \node[above] at (5,1.7) {\textbf{L2}};
+    \node[below,align=center] at (5,-1.7) {\footnotesize mobile\\[-2pt]\footnotesize (collimation)};
+    \draw[->,thick,vespared] (4.45,2.15) -- (5.55,2.15);
+    \draw[->,thick,vespared] (5.55,2.35) -- (4.45,2.35);
+
+    % --- faisceau : source -> L1 (divergent) ---
+    \draw (0,0) -- (2,0.62);   \draw (0,0) -- (2,-0.62);
+    % --- L1 -> L2 (collimate, elargi) ---
+    \draw (2,0.62) -- (5,1.25);  \draw (2,-0.62) -- (5,-1.25);
+    % --- L2 -> cible (convergent) ---
+    \draw (5,1.25) -- (12,0);   \draw (5,-1.25) -- (12,0);
+    % --- au-dela de la cible : divergence ---
+    \draw[gray] (12,0) -- (13.2,0.42);  \draw[gray] (12,0) -- (13.2,-0.42);
+
+    % --- diametre en L2 ---
+    \draw[<->] (5.5,-1.25) -- (5.5,1.25)
+      node[midway,fill=white,inner sep=1.5pt] {$\varnothing_2$};
+
+    % --- cible ---
+    \node[vespared] at (12,0) {\Large $\boldsymbol{\times}$};
+    \node[below=6pt,vespared] at (12,0) {\textbf{cible}};
+
+    % --- cotes ---
+    \draw[|<->|,gray] (0,-2.5) -- (2,-2.5) node[midway,below] {$x_{L1}$};
+    \draw[|<->|,gray] (2,-2.5) -- (5,-2.5) node[midway,below] {$x_{L2}$};
+    \draw[|<->|,gray] (5,-2.5) -- (12,-2.5) node[midway,below] {$x_c$ (distance cible)};
+  \end{tikzpicture}
+  \caption{Chemin optique du tir. L1 collimate le faisceau de la diode ; \textbf{L2, mobile},
+  le focalise sur la cible. Déplacer L2 déplace le point de focalisation : c'est le principe
+  de la collimation dynamique. Hors du plan de focalisation, la densité de puissance chute —
+  \textbf{mais pas assez vite pour supprimer le risque oculaire} (voir « Difficultés
+  techniques », profondeur de champ létale, et \fichier{docs/annexes/securite\_laser.md}).}
+  \label{fig:optic-path}
+\end{figure}
 
 \paragraph{Cadence.} La boucle complète doit tenir dans \textbf{16,6~ms} (60~Hz). À 60~fps,
 le système suit une cible se déplaçant jusqu'à $0{,}6~\text{m}\cdot\text{s}^{-1}$ — ce qui
@@ -495,20 +576,20 @@ capteur monochrome, et d'où l'incompatibilité avec VespAI}
 \begin{lstlisting}
 project_vespa/
 |- docs/                  Rapports (PDF + sources LaTeX), annexes, references
-|  |- src/                Sources LaTeX + vespa.bib + figures
+|  |- src/                Sources LaTeX + vespa.bib + figures (figs/)
 |  |- annexes/            Cablage, protocole CAN, BOM, setup Jetson, securite
-|  \- references/         Articles, datasheets, etudes preparatoires
-|- hardware/              Mecanique (impressions 3D), moteurs
-|- jetson/                Configuration systeme (overlays, services CAN, extlinux)
+|  \- references/         Articles, datasheets, etudes prep., rapport mk.1
+|- hardware/
+|  \- mechanical/         CAO (STEP), maillages imprimes, plateaux, moteur
+|- jetson/                Config systeme (overlays, services CAN, extlinux)
 |- simulation/            Scripts MATLAB de dimensionnement (vision + optique)
-|- software/
-|  |- common/             Protocole CAN partage (C, portable STM32/ESP32/Linux)
-|  |- vision_node/        Jetson - C++17 / OpenCV / V4L2 / SocketCAN (CMake)
-|  |- motion_node/        STM32G431RB - SimpleFOC / FDCAN (PlatformIO)
-|  |- coordination_node/  ESP32 - NON IMPLEMENTE (specification seule)
-|  |- tools/              Calibration stereo, exposition, viewport
-|  \- legacy_mk1_bench/   Banc de caracterisation mk.1 (Arduino Uno)
-\- tools/                 Scripts utilitaires du depot
+\- software/
+   |- common/             Protocole CAN partage (C, portable STM32/ESP32)
+   |- vision_node/        Jetson - C++17 / OpenCV / V4L2 / SocketCAN (CMake)
+   |- motion_node/        STM32G431RB - SimpleFOC / FDCAN (PlatformIO)
+   |- coordination_node/  ESP32 - NON IMPLEMENTE (specification seule)
+   |- tools/              Calibration stereo, exposition, viewport
+   \- legacy_mk1_bench/   Banc de caracterisation mk.1 (Arduino Uno)
 \end{lstlisting}
 
 \paragraph{Le banc mk.1.} \fichier{software/legacy\_mk1\_bench/} contient le code Arduino

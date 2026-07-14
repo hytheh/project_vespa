@@ -21,7 +21,7 @@
 
 ## 1. Système de base
 
-1. Flasher **JetPack 6.2** (L4T r36.4) sur le Jetson Orin Nano Super 8 Go, via NVIDIA SDK
+1. Flasher **JetPack 6.2.1** (L4T r36.4) sur le Jetson Orin Nano Super 8 Go, via NVIDIA SDK
    Manager. La configuration d'origine a la racine sur **NVMe**.
 2. Installer le **noyau et les pilotes Arducam** pour l'OV9281 (procédure du constructeur).
    Le noyau dédié est installé dans `/boot/arducam/`.
