@@ -11,8 +11,8 @@ Total en fin de page. Les prix de la colonne `Prix TTC` sont des **prix de ligne
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
 | Jetson Orin Nano Super Developer Kit | RS Online | 1 | 311,18 € |
-| **NUCLEO-G431RB** — *MCU du `motion_node`* | ST | 1 | — |
-| **X-NUCLEO-IHM16M1** (STSPIN830) — *étages de puissance* | ST | 2 | — |
+| **NUCLEO-G431RB** — *MCU du `motion_node`* | Farnell France | 1 | 22,08 € |
+| **X-NUCLEO-IHM16M1** (STSPIN830) — *étages de puissance* | Farnell France | 2 | 36,22 € |
 | ESP32-C3 SuperMini — *nœud de coordination, jamais implémenté* | AliExpress | 1 | 4,29 € |
 | Alimentation AC-DC 24 V / 150 W | AliExpress | 1 | 5,29 € |
 | Transceivers CAN WCMCU-230 (lot de 10) — ⚠️ **contrefaits, voir ci-dessous** | AliExpress | 1 | 5,19 € |
@@ -55,23 +55,12 @@ Total en fin de page. Les prix de la colonne `Prix TTC` sont des **prix de ligne
 
 | | Prix TTC |
 |---|---:|
-| Calcul et électronique *(hors cartes ST, non chiffrées)* | 335,04 € |
+| Calcul et électronique | 393,34 € |
 | Vision | 151,88 € |
 | Mécanique et actionneurs | 157,95 € |
 | Optique de tir | 107,28 € |
 | Sécurité | 30,29 € |
-| **Sous-total — lignes chiffrées** | **782,44 €** |
-| **NUCLEO-G431RB** (×1) + **X-NUCLEO-IHM16M1** (×2) | **à consigner** |
-| **TOTAL** | **782,44 € + cartes ST** |
-
-> ⚠️ **Ce total est incomplet et le restera tant que les trois cartes ST ne seront pas
-> chiffrées.** Elles ont été achetées chez **Farnell France** mais leur prix n'a jamais été
-> consigné, et il n'est pas reconstituable : il faut le relever sur la facture Farnell.
->
-> L'ancien en-tête annonçait « Total relevé ≈ 830 € TTC ». **Ce chiffre ne se recoupe avec
-> aucune lecture de la table** : la somme des lignes vaut 782,44 € (prix de ligne) ou
-> 938,30 € (si on lisait la colonne comme des prix unitaires). Il a donc été retiré plutôt
-> que propagé.
+| **TOTAL** | **840,74 €** |
 
 ---
 
