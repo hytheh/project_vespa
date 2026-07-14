@@ -81,7 +81,29 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
         biologique par nématodes mermithidés. Contrepoint utile : aucune méthode de
         régulation existante n'est à la fois sélective et efficace, ce qui justifie
         d'explorer la lutte active.
+
+  \item \textbf{Ruiz-Cristi \emph{et al.} (2020)} \cite{ruizcristi2020thermotolerance} —
+        \textbf{tolérance thermique de \emph{V. velutina nigrithorax}}. Mesurée sur
+        l'espèce cible elle-même, tous sexes, castes et stades confondus : la limite
+        thermique létale se situe autour de \textbf{45\,\textcelsius{}}. \textbf{C'est la
+        donnée biologique sur laquelle repose le dimensionnement de l'effecteur} — la
+        température que le tir doit atteindre. Corroborée par
+        \textbf{Ono \emph{et al.} (1995)} \cite{ono1995thermal}, qui montre que l'abeille
+        japonaise exploite précisément cet écart de tolérance (frelon
+        $\approx 45$\,\textcelsius{}, abeille $\approx 50$\,\textcelsius{}) pour tuer le
+        frelon par hyperthermie dans une « boule » à 47\,\textcelsius{}. La neutralisation
+        thermique du frelon n'est donc pas une extrapolation : c'est un mécanisme attesté
+        dans la nature.
 \end{itemize}
+
+\begin{note}[Ce que ces deux articles ne disent pas]
+Ils donnent un \textbf{seuil de température}, pas une \textbf{dose optique}. Leurs temps
+d'exposition (13~s à plusieurs minutes) relèvent d'un chauffage \emph{convectif du corps
+entier} — étuve, flux d'air humide. Ils ne se transposent pas tels quels à une impulsion
+laser localisée de 20~ms. Le passage du seuil à la dose est l'objet des deux références
+\emph{Photonic Fence} du chapitre « Optique et sécurité laser », et ce passage
+\textbf{reste incomplet} : voir l'avertissement qui s'y trouve.
+\end{note}
 
 % =====================================================================
 \section{Vision par ordinateur}
@@ -203,7 +225,57 @@ toucher \emph{Vespa crabro} (le frelon européen, natif et protégé).
   \item \textbf{Siegman, \emph{Lasers}} \cite{siegman1986lasers} — divergence et irradiance
         du faisceau. Support du tracé de densité de puissance le long de l'axe optique
         (\fichier{simulation/optique/Laser\_Optics\_v1.m}).
+
+  \item \textbf{Keller \emph{et al.} (2020)} \cite{keller2020photonicfence} —
+        \textsc{Photonic Fence}. \textbf{Le seul système publié qui neutralise au laser des
+        insectes \emph{en vol}}, avec des courbes dose-réponse mesurées. Il fonde
+        \textbf{deux} des trois constantes de tir de
+        \fichier{simulation/optique/Laser\_Optics\_v1.m} :
+        \begin{itemize}
+          \item \textbf{le choix du bleu} — les longueurs d'onde visibles exigent une
+                exposition bien plus faible que le proche infrarouge : LD90
+                $= 1{,}6$~J/cm$^2$ à 445~nm, contre $12{,}9$~J/cm$^2$ à 1064~nm. Le
+                « couplage optimal avec la cuticule » invoqué par l'annexe sécurité a donc
+                une base mesurée ;
+          \item \textbf{la durée d'impulsion} — 25~ms est identifiée comme la durée idéale
+                pour minimiser la puissance requise, et le comportement de vol de la cible
+                n'affecte pas la mortalité en deçà. Les \textbf{20~ms} de
+                \texttt{T\_exposure} tombent dans cette fenêtre.
+        \end{itemize}
+        Complété par \textbf{Keller \emph{et al.} (2016)} \cite{keller2016mosquito}, l'étude
+        de dose antérieure (sujets anesthésiés, balayage 532--10\,600~nm, 10~ns--25~ms) :
+        c'est la source de la \emph{méthode} — comment on \emph{établit} une fluence létale
+        au lieu de la postuler.
 \end{itemize}
+
+\begin{avertissement}[La fluence létale de 50~J/cm$^2$ n'est toujours pas sourcée]
+Les deux références ci-dessus fondent la longueur d'onde et la durée d'impulsion. Elles ne
+fondent \textbf{pas} la troisième constante, et c'est la plus lourde de conséquences :
+\texttt{Fluence\_Lethal = 50 J/cm\textasciicircum 2} dans
+\fichier{simulation/optique/Laser\_Optics\_v1.m}.
+
+\begin{itemize}
+  \item C'est \textbf{environ 30 fois} la LD90 publiée dans le bleu ($1{,}6$~J/cm$^2$) —
+        mais celle-ci est mesurée sur un \emph{Anopheles}, deux ordres de grandeur plus
+        léger qu'une ouvrière de \emph{V. velutina}.
+  \item \textbf{Aucune mesure de létalité laser n'existe pour un frelon.} Keller \emph{et
+        al.} ne testent que moustiques, drosophiles et psylles : rien qui approche la masse
+        de la cible du projet. L'extrapolation est donc inévitable — mais elle doit être
+        \textbf{déclarée comme telle}.
+  \item Le sens de l'erreur n'est pas neutre. Surestimer la fluence létale est prudent pour
+        l'\emph{efficacité}, et \textbf{dangereux pour la sécurité} : c'est ce chiffre qui
+        commande la puissance requise, donc l'irradiance de $\approx 2\,500$~W/cm$^2$, donc
+        la Classe 4 et les \textbf{200~m} de portée du danger oculaire. Une valeur plus
+        juste rendrait peut-être le dispositif moins dangereux.
+\end{itemize}
+
+\textbf{Travail à reprendre :} établir la dose létale pour \emph{V. velutina} en partant du
+seuil thermique de Ruiz-Cristi \emph{et al.} \cite{ruizcristi2020thermotolerance}
+($\approx 45$\,\textcelsius{}) et des paramètres morphologiques de Sipos \emph{et al.}
+\cite{sipos2025morphologie} (masse et surface du thorax), par la méthode de
+Keller \emph{et al.} (2016) \cite{keller2016mosquito}. Tant que ce calcul n'est pas refait,
+\textbf{les 50~J/cm$^2$ restent une hypothèse, pas un résultat.}
+\end{avertissement}
 
 % =====================================================================
 \section{Travaux antérieurs}

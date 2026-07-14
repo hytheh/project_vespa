@@ -14,8 +14,31 @@ Target_Range = [550, 1100]; % mm
 Default_Target = 800;   % mm
 
 % Safety/Lethality Constants
-T_exposure = 0.020;     % s
-Fluence_Lethal = 50;    % J/cm^2
+%
+% PROVENANCE (added July 2026 -- see docs/src/vespa.bib):
+%   T_exposure     20 ms. Consistent with Keller et al. 2020 (Sci. Rep. 10:14795,
+%                  doi:10.1038/s41598-020-71824-y), which identifies ~25 ms as the
+%                  ideal pulse duration to minimise required laser power, with no
+%                  effect of target flight behaviour below that.  [keller2020photonicfence]
+%
+%   Fluence_Lethal 50 J/cm^2. *** UNSOURCED ASSUMPTION -- DO NOT TRUST. ***
+%                  No laser-lethality measurement exists for any hornet. The only
+%                  published dose-response curves are for far lighter insects:
+%                  Keller 2020 reports LD90 = 1.6 J/cm^2 at 445 nm on Anopheles,
+%                  i.e. ~30x LOWER than the value used here. The figure below is an
+%                  undocumented extrapolation to the mass of a V. velutina worker.
+%                  It drives P_laser -> I_lethal -> Class 4 -> the 200 m ocular
+%                  hazard: erring high is safe for efficacy, UNSAFE for people.
+%                  To redo properly: lethal thermal limit ~45 C for V. velutina
+%                  (Ruiz-Cristi et al. 2020, PLoS ONE 15(10):e0239742,
+%                  doi:10.1371/journal.pone.0239742) + thorax mass/area (Sipos 2025),
+%                  via the dose method of Keller et al. 2016 (doi:10.1038/srep20936).
+%
+%   Wavelength     Blue (~460 nm) is not an arbitrary preference: visible wavelengths
+%                  need far less exposure than NIR (1.6 vs 12.9 J/cm^2). [keller2020]
+%
+T_exposure = 0.020;     % s      -- corroborated (Keller 2020: ~25 ms optimal)
+Fluence_Lethal = 50;    % J/cm^2 -- ASSUMPTION, not a measurement. See above.
 I_lethal = Fluence_Lethal / T_exposure; % 2500 W/cm^2
 I_MPE_Eye = 0.0025;     % W/cm^2
 I_DryLeaf = 250;        % W/cm^2

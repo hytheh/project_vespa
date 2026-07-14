@@ -123,3 +123,31 @@ Aucun tir ne doit avoir lieu avant que **toutes** les conditions suivantes soien
   et calcul d'irradiance.
 - `docs/Difficultes_techniques.pdf`, § « La profondeur de champ létale » — analyse du
   résultat des 200 m.
+
+### Origine des valeurs biologiques du dimensionnement
+
+Ajouté en juillet 2026 : le dimensionnement s'appuyait sur des valeurs biologiques dont
+**aucune source n'était citée**. Elles le sont désormais dans `docs/src/vespa.bib` :
+
+| Valeur | Statut | Source |
+|---|---|---|
+| **Longueur d'onde bleue** (≈ 460 nm), « couplage cuticule » | ✅ **Fondée** — le visible exige bien moins d'exposition que l'IR (LD90 1,6 J/cm² à 445 nm contre 12,9 J/cm² à 1064 nm) | Keller *et al.* 2020, *Sci. Rep.* **10**:14795 |
+| **Durée d'exposition** 20 ms | ✅ **Corroborée** — ≈ 25 ms identifié comme durée idéale | Keller *et al.* 2020 |
+| **Limite thermique létale** ≈ 45 °C | ✅ **Fondée**, mesurée sur *V. velutina nigrithorax* | Ruiz-Cristi *et al.* 2020, *PLoS ONE* **15**(10):e0239742 |
+| **Fluence létale 50 J/cm²** | ❌ **NON SOURCÉE** — hypothèse, pas une mesure | — |
+
+> ### ⚠️ Les 50 J/cm² sont une hypothèse, et elle est orientée du mauvais côté
+>
+> **Aucune mesure de létalité laser n'existe pour un frelon.** La seule LD90 publiée dans
+> le bleu vaut **1,6 J/cm²** — sur un moustique, deux ordres de grandeur plus léger. La
+> valeur retenue par le projet est **~30× plus élevée**, par extrapolation jamais écrite.
+>
+> Ce n'est pas un détail bibliographique : **c'est ce chiffre qui commande la puissance**,
+> donc l'irradiance de 2 200–2 500 W/cm², donc la **Classe 4** et les **200 m** de danger
+> oculaire. Surestimer la fluence létale est prudent pour l'efficacité et **dangereux pour
+> les personnes**. Si la valeur réelle est plus basse, le dispositif est plus puissant —
+> donc plus dangereux — qu'il n'a besoin de l'être.
+>
+> **À refaire avant tout tir :** dose létale calculée à partir du seuil thermique (45 °C,
+> Ruiz-Cristi 2020) et de la masse/surface du thorax (Sipos 2025), par la méthode de
+> Keller *et al.* 2016 (`doi:10.1038/srep20936`).
