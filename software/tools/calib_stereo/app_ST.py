@@ -191,7 +191,9 @@ def compute_calibration():
         "T": T.tolist()  
     }
 
-    config_path = "/home/hytheh/project_vespa/software/vision_node/config/stereovision_settings.json"
+    config_path = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "..", "..", "vision_node", "config", "stereovision_settings.json"))
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
     with open(config_path, 'w') as f:
         json.dump(calibration_data, f, indent=4)
@@ -212,14 +214,6 @@ def compute_calibration():
         "pairs_used": len(objpoints)
     })
 
-    return jsonify({
-        "status": "success", 
-        "rms": round(ret_stereo, 3), 
-        "baseline": round(baseline_mm, 2), 
-        "focal_length_px": round(focal_length_px, 2), # <-- Pass it to the frontend
-        "pairs_used": len(objpoints)
-    })
-
 @app.route('/shutdown', methods=['POST'])
 def shutdown():
     """Receives the UI shutdown command."""
@@ -231,4 +225,6 @@ def shutdown():
     return jsonify({"status": "shutting down"})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False, threaded=True)
+    # Localhost only (no auth); port 5002 so it never collides with the exposure
+    # tool (5000) or the live viewport (5001). Access via SSH tunnel if remote.
+    app.run(host='127.0.0.1', port=5002, debug=False, threaded=True)

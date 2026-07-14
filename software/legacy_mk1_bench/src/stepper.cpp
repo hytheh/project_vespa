@@ -201,6 +201,11 @@ void StepperController::update() {
   if (!continuous_rotation && position_deg >= config.range_max_deg) {
     stop();
   }
+  // Symmetric lower hard-limit. Enforced only once homed, so it does not fire
+  // during the homing sweep (which legitimately travels through/below 0).
+  if (!continuous_rotation && homed && position_deg <= config.motion_lower_bound_deg) {
+    stop();
+  }
 
   // Read the endstop *once* per update tick
   bool endstop_hit = (digitalRead(endstopPin) == config.endstop_active_level);

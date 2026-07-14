@@ -146,6 +146,11 @@ namespace VESPA
         bool left_ok = m_leftCam->captureFrame(pair.left_timestamp_ms, pair.left_data, pair.left_index);
         bool right_ok = m_rightCam->captureFrame(pair.right_timestamp_ms, pair.right_data, pair.right_index);
 
+        // Bound the re-alignment: a persistent timestamp drift must not spin this
+        // loop indefinitely dropping frames. After the cap we give up on this pair.
+        const int MAX_RESYNC_ATTEMPTS = 20;
+        int attempts = 0;
+
         while (left_ok && right_ok)
         {
             double diff = pair.left_timestamp_ms - pair.right_timestamp_ms;
@@ -155,6 +160,9 @@ namespace VESPA
                 pair.valid = true;
                 return pair;
             }
+
+            if (++attempts > MAX_RESYNC_ATTEMPTS)
+                break;
 
             if (diff < 0)
             {

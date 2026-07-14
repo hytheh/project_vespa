@@ -1,7 +1,8 @@
 #include <Arduino.h>
 #include <SPI.h>
 #include <SimpleFOC.h>
-#include "pinout.h" 
+#include <IWatchdog.h>
+#include "pinout.h"
 
 #include "motion_can.h"
 #include "can_utils.h"
@@ -45,11 +46,19 @@ const float TILT_MAX_LIMIT =  0.78f;
 float pan_base_target  = 0.0f;
 float tilt_base_target = 0.0f;
 
-// --- CAN ISOLATION VARIABLES ---
-float test_pan_can = 0.0f;
-float test_tilt_can = 0.0f;
-uint16_t test_depth_can = 0;
-uint8_t test_lock_state = 0;
+// --- LATEST VISION TARGET (decoded from the CAN TARGET_VEC frame) ---
+float vision_pan_rad  = 0.0f;
+float vision_tilt_rad = 0.0f;
+uint16_t vision_depth_mm = 0;
+uint8_t vision_locked = 0;
+
+// --- CAN BUS FAULT DETECTION ---
+// If the Jetson stops ACKing our POS_MOTION frames for this many consecutive
+// transmits (20 Hz => ~5 s), we flag a bus fault: the servo freezes on its last
+// commanded angle and the heartbeat reports WARNING instead of OK.
+const uint32_t CAN_TX_FAULT_THRESHOLD = 100;
+uint32_t consecutive_tx_failures = 0;
+bool bus_fault = false;
 
 // --- TX TRACKING VARIABLES (For Monitor) ---
 int16_t last_tx_pan = 0;
@@ -136,36 +145,62 @@ void setup() {
     Serial.println("!!! CAN BUS INIT FAILED !!!");
   }
 
+  // Arm the independent hardware watchdog LAST, once every blocking init step
+  // (delay, initFOC, CAN) is done. From here loop() must refresh it within the
+  // timeout or the MCU resets — this catches a firmware hang that would
+  // otherwise leave the PWM frozen with only the physical e-stop as a net.
+  IWatchdog.begin(200000); // 200 ms
+
   Serial.println("=== SYSTEM READY. SILENT STARTUP SUCCESS ===");
-  Serial.flush(); 
+  Serial.flush();
 }
 
 void loop() {
+  // Refresh the watchdog once per normal iteration.
+  IWatchdog.reload();
+
   if (estop_triggered) {
     motorPan.disable();
     motorTilt.disable();
-    
+
     HeartbeatPayload_t hbPayload;
-    hbPayload.system_state = 0x02; 
+    hbPayload.system_state = 0x02;
     CAN_Frame_t txFrame;
     if (CAN_Encode_Heartbeat(&txFrame, CAN_ID_HB_MOTION, &hbPayload)) {
         canBus.sendFrame(&txFrame);
     }
-    
+
     Serial.println("\n!!! EMERGENCY STOP TRIGGERED !!!");
     Serial.flush();
-    while(true) { delay(1000); }
+    // Latch: hold the drivers disabled forever. Keep petting the watchdog and
+    // re-asserting the fault lines so this DELIBERATE stop is not undone by a
+    // watchdog reset (which would re-run setup() and re-enable the motors).
+    while (true) {
+      IWatchdog.reload();
+      digitalWrite(M1_EN_FAULT, LOW);
+      digitalWrite(M2_EN_FAULT, LOW);
+      delay(100);
+    }
   }
 
   // 1. POLL CAN BUS FOR JETSON TARGETS
   if (canBus.readFrame(&rxFrame)) {
     TargetPayload_t target;
     if (CAN_Decode_TargetVec(&rxFrame, &target)) {
-        test_pan_can    = target.pan_angle / ANGLE_SCALE_FACTOR;
-        test_tilt_can   = target.tilt_angle / ANGLE_SCALE_FACTOR;
-        test_depth_can  = target.depth_mm;
-        test_lock_state = target.is_locked;
-        
+        vision_pan_rad  = target.pan_angle / ANGLE_SCALE_FACTOR;
+        vision_tilt_rad = target.tilt_angle / ANGLE_SCALE_FACTOR;
+        vision_depth_mm = target.depth_mm;
+        vision_locked   = target.is_locked;
+
+        // Follow the vision aim-point only while the tracker reports a valid
+        // lock AND the bus is healthy; otherwise hold the last commanded angle.
+        // The potentiometer stays an additive manual trim on top of this base
+        // target (see section 2), so a future integrator can null it out.
+        if (vision_locked && !bus_fault) {
+            pan_base_target  = vision_pan_rad;
+            tilt_base_target = vision_tilt_rad;
+        }
+
         Serial.println("\n<<< [HOT RX] NEW TARGET DATA RECEIVED! >>>");
     }
   }
@@ -203,7 +238,17 @@ void loop() {
       CAN_Frame_t txFrame;
       if (CAN_Encode_MotionPos(&txFrame, &posPayload)) {
           // If this returns true, the Jetson is successfully ACKing frames!
-          last_pos_tx_success = canBus.sendFrame(&txFrame); 
+          last_pos_tx_success = canBus.sendFrame(&txFrame);
+
+          // Escalate on repeated send failure (no ACK => bus/peer down).
+          if (last_pos_tx_success) {
+              consecutive_tx_failures = 0;
+              bus_fault = false;
+          } else if (consecutive_tx_failures < 0xFFFFFFFFu) {
+              if (++consecutive_tx_failures >= CAN_TX_FAULT_THRESHOLD) {
+                  bus_fault = true; // freeze on last angle; report WARNING
+              }
+          }
       }
   }
 
@@ -212,7 +257,7 @@ void loop() {
   if (millis() - last_hb_tx >= 1000) {
       last_hb_tx = millis();
       HeartbeatPayload_t hbPayload;
-      hbPayload.system_state = 0x00; 
+      hbPayload.system_state = bus_fault ? 0x01 : 0x00; // WARNING vs OK
       CAN_Frame_t txFrame;
       if (CAN_Encode_Heartbeat(&txFrame, CAN_ID_HB_MOTION, &hbPayload)) {
           last_hb_tx_success = canBus.sendFrame(&txFrame);
@@ -224,15 +269,15 @@ void loop() {
   if (millis() - last_can_debug_tx >= 500) {
       last_can_debug_tx = millis();
       
-      Serial.print("[JETSON -> G431] RX Target | Pan: "); Serial.print(test_pan_can, 4);
-      Serial.print(" rad | Tilt: "); Serial.print(test_tilt_can, 4);
-      Serial.print(" rad | Lock: "); Serial.println(test_lock_state);
-      
+      Serial.print("[JETSON -> G431] RX Target | Pan: "); Serial.print(vision_pan_rad, 4);
+      Serial.print(" rad | Tilt: "); Serial.print(vision_tilt_rad, 4);
+      Serial.print(" rad | Lock: "); Serial.println(vision_locked);
+
       Serial.print("[G431 -> JETSON] TX Pos (20Hz) | Pan: "); Serial.print(last_tx_pan);
       Serial.print(" | Tilt: "); Serial.print(last_tx_tilt);
       Serial.print(" | Jetson ACK: "); Serial.println(last_pos_tx_success ? "OK" : "FAIL (No ACK / Bus Dead)");
 
-      Serial.print("[G431 -> JETSON] TX Heartbeat (1Hz) | State: 0x00"); 
+      Serial.print("[G431 -> JETSON] TX Heartbeat (1Hz) | State: "); Serial.print(bus_fault ? "0x01 WARN" : "0x00 OK");
       Serial.print(" | Jetson ACK: "); Serial.println(last_hb_tx_success ? "OK" : "FAIL");
       Serial.println("---------------------------------------------------------");
   }

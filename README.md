@@ -72,7 +72,7 @@ Trois nœuds sur un bus **CAN 2.0B à 500 kbit/s**, plus un système auxiliaire 
 | Nœud | Cible | Rôle | État |
 |---|---|---|---|
 | **[vision_node](software/vision_node/)** | Jetson Orin Nano | Acquisition stéréo synchronisée matériellement (60 Hz), détection, triangulation, prédiction de Kalman, émission de la consigne | ✅ Fonctionnel (cible ArUco) |
-| **[motion_node](software/motion_node/)** | STM32G431RB | Cinématique inverse, asservissement FOC en boucle fermée des deux axes pan/tilt | ✅ Fonctionnel |
+| **[motion_node](software/motion_node/)** | STM32G431RB | Asservissement FOC en boucle fermée des deux axes pan/tilt sur la consigne reçue par CAN (la cinématique inverse `X,Y,Z → pan,tilt` est faite côté vision) | ✅ Servo FOC fonctionnel · intégration vision→moteur câblée, non validée sur banc |
 | **[coordination_node](software/coordination_node/)** | ESP32 | Collimation dynamique, séquence de tir, **watchdog** et autorisation de tir | ❌ **Non implémenté** |
 | **[common](software/common/)** | tous | Protocole CAN partagé (source unique de vérité) | ✅ Fonctionnel |
 
@@ -156,7 +156,7 @@ installés (voir [configuration Jetson](docs/annexes/jetson_setup.md) — cette 
 
 ```bash
 # --- Nœud de vision (Jetson) ---
-sudo apt install libopencv-dev libi2c-dev libzmq3-dev cppzmq-dev v4l-utils can-utils
+sudo apt install libopencv-dev libi2c-dev libzmq3-dev cppzmq-dev nlohmann-json3-dev v4l-utils can-utils
 cd software/vision_node && mkdir -p build && cd build
 cmake .. && make -j6
 sudo ./vision_node                 # accès requis à /sys/class/pwm et /dev/video*
@@ -167,12 +167,17 @@ pio run -t upload                  # sonde ST-LINK
 pio device monitor -b 115200
 
 # --- Outils de maintenance (Jetson, headless : interface web) ---
-cd software/tools/calib_stereo && ./run_calibration.sh      # http://<jetson>:5000
+# Les serveurs web n'écoutent QUE sur localhost (127.0.0.1). Sur un Jetson
+# headless, y accéder par un tunnel SSH : ssh -L 5002:localhost:5002 <jetson>
+cd software/tools/calib_stereo && ./run_calibration.sh      # http://localhost:5002
 ```
 
-> Le nœud de vision et les outils Python se disputent le même matériel. Un verrou
-> d'exclusion mutuelle (`/tmp/vespa_hardware.lock`) empêche les deux de toucher le bus I²C
-> en même temps : **lancer les deux à la fois échouera volontairement**, ce n'est pas un bug.
+> Le nœud de vision et l'outil de calibration d'exposition (`calib_exposition`) accèdent
+> tous deux directement au bus I²C. Un verrou d'exclusion mutuelle
+> (`/tmp/vespa_hardware.lock`) les empêche de le toucher en même temps : **lancer les deux à
+> la fois échouera volontairement**, ce n'est pas un bug. (Les outils `calib_stereo` et
+> `viewport_live` ne prennent pas le verrou : ils ne font que consommer le flux ZMQ d'un
+> producteur C++ qui, lui, le détient.)
 
 ---
 
@@ -189,6 +194,23 @@ près de **200 m**. Ne pas se croire protégé par la défocalisation.
 
 Le dispositif de tir de ce dépôt est **incomplet et non validé**. Voir
 [docs/annexes/securite_laser.md](docs/annexes/securite_laser.md) avant toute manipulation.
+
+---
+
+## Licence
+
+Le code et la documentation **originaux** de ce dépôt sont publiés sous licence **MIT**
+(voir [`LICENSE`](LICENSE)) — cohérent avec le statut « ouvert à reprise ».
+
+Composants tiers, sous leurs licences respectives :
+
+- `software/vision_node/include/zmq.hpp` — **cppzmq 4.11.0**, licence MIT (en-tête conservé).
+- Les articles scientifiques de `docs/references/articles/` restent la propriété de leurs
+  auteurs/éditeurs ; ceux conservés ici sont en Open Access **CC-BY**. Les *datasheets*
+  constructeurs (`docs/references/datasheets/`) appartiennent à leurs fabricants respectifs.
+
+Pour reprendre le projet, voir [`CONTRIBUTING.md`](CONTRIBUTING.md). Pour le citer, voir
+[`CITATION.cff`](CITATION.cff).
 
 ---
 

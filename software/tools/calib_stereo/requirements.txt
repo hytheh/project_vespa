@@ -1,0 +1,7 @@
+# Python dependencies for the VESPA Stereo calibration tool.
+# On a Jetson, OpenCV is usually provided by JetPack; if so, create the venv
+# with --system-site-packages instead of pip-installing opencv-python.
+flask
+numpy
+opencv-python
+pyzmq

@@ -62,7 +62,7 @@ bool VisionCan::begin() {
 
 bool VisionCan::configureFilters() {
     // The Vision Node only needs to subscribe to specific messages:
-    // ERR_MOTION (0x030), ERR_COORD (0x040), HB_MOTION (0x110), HB_COORD (0x120)
+    // POS_MOTION (0x030), POS_COORD (0x040), HB_MOTION (0x110), HB_COORD (0x120)
     struct can_filter rfilter[4];
 
     rfilter[0].can_id   = CAN_ID_POS_MOTION;

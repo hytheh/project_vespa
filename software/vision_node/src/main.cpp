@@ -18,6 +18,7 @@
 #include "ArUcoTracker.h"
 #include "StereoTriangulator.h"
 #include "PredictiveTurretSight.h"
+#include "config_path.h"
 
 #include "vision_can.h"
 #include "can_protocol.h"
@@ -60,8 +61,7 @@ int main()
     std::cout << "[SYSTEM] CAN Bus [can0] Active.\n";
 
     // 2. BOOT OPTICS & MATH
-    std::string config_path = "/home/hytheh/project_vespa/software/vision_node/config/";
-    std::ifstream file(config_path + "stereovision_settings.json");
+    std::ifstream file(resolveConfigPath("stereovision_settings.json"));
     if (!file.is_open())
     {
         std::cerr << "[FATAL] Could not open stereovision_settings.json\n";
@@ -70,18 +70,27 @@ int main()
     json calib;
     file >> calib;
 
-    float Fx = calib["camera_matrix_left"][0][0];
-    float Fy = calib["camera_matrix_left"][1][1];
-    float Cx = calib["camera_matrix_left"][0][2];
-    float Cy = calib["camera_matrix_left"][1][2];
+    // Calibration is stored in the RAW landscape sensor frame (1280x800).
+    float Fx_raw = calib["camera_matrix_left"][0][0];
+    float Fy_raw = calib["camera_matrix_left"][1][1];
+    float Cx_raw = calib["camera_matrix_left"][0][2];
+    float Cy_raw = calib["camera_matrix_left"][1][2];
     float baseline_mm = std::abs((float)calib["T"][0][0]);
 
-    cv::Mat K = (cv::Mat_<double>(3, 3) << Fx, 0, Cx, 0, Fy, Cy, 0, 0, 1);
-    cv::Mat D = cv::Mat::zeros(1, 5, CV_64F);
+    // ArUcoTracker::detect() returns centroids in the UPRIGHT 800x1280 frame
+    // (CCW 90 deg: upright_x = raw_y, upright_y = RAW_WIDTH - raw_x). The
+    // triangulator and the sight must therefore use intrinsics expressed in that
+    // SAME frame -- otherwise X/Y (and the resulting pan/tilt) are back-projected
+    // against a principal point in the wrong coordinate system. Rotate them:
+    const float RAW_WIDTH = 1280.0f;
+    float Fx = Fy_raw;              // upright-x focal      = raw-y focal
+    float Fy = Fx_raw;              // upright-y focal      = raw-x focal
+    float Cx = Cy_raw;              // upright principal-x  = raw Cy
+    float Cy = RAW_WIDTH - Cx_raw;  // upright principal-y  = RAW_WIDTH - raw Cx
 
     TriangulatorConfig t_config;
     t_config.baseline_mm = baseline_mm;
-    t_config.focal_length_px = Fx;
+    t_config.focal_length_px = Fx;  // disparity/depth axis = upright-x = raw-y
     t_config.epipolar_tolerance_px = 150.0f;
     t_config.min_disparity_px = 1.0f;
     t_config.center_x_px = Cx;
@@ -91,7 +100,7 @@ int main()
     ArUcoTracker tracker;
     PredictiveTurretSight sight(Fx, Fy, Cx, Cy, 0.15);
 
-    HardwareSyncController hal("/dev/video0", "/dev/video1", config_path + "camera_settings.json");
+    HardwareSyncController hal("/dev/video0", "/dev/video1", resolveConfigPath("camera_settings.json"));
     if (!hal.initializeRig())
         return -1;
     hal.armTrigger();
@@ -137,22 +146,14 @@ int main()
         // C. COMPUTE FIRING SOLUTION
         if (!raw_left.empty() && !raw_right.empty())
         {
-            auto undistort = [&](const std::vector<Target2D> &raw)
-            {
-                std::vector<Target2D> un = raw;
-                std::vector<cv::Point2f> in, out;
-                for (const auto &t : raw)
-                    in.push_back(cv::Point2f(t.cx, t.cy));
-                cv::undistortPoints(in, out, K, D, cv::noArray(), K);
-                for (size_t i = 0; i < raw.size(); ++i)
-                {
-                    un[i].cx = out[i].x;
-                    un[i].cy = out[i].y;
-                }
-                return un;
-            };
-
-            auto targets_3d = triangulator.triangulate(undistort(raw_left), undistort(raw_right));
+            // Feed the upright detection centroids straight into the sparse
+            // triangulator, as the validated reference pipeline does
+            // (test_stereo_pipeline.cpp). NOTE: lens distortion is intentionally
+            // NOT corrected in this sparse path -- the coefficients are defined
+            // in the raw sensor frame while detect() already rotated the points,
+            // so undistorting here would be geometrically wrong. See
+            // docs/annexes/dette_technique.md before trusting an absolute angle.
+            auto targets_3d = triangulator.triangulate(raw_left, raw_right);
 
             if (!targets_3d.empty())
             {
