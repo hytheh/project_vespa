@@ -1,7 +1,8 @@
 # Annexe — Nomenclature (BOM)
 
 Nomenclature du prototype **mk.2**, **telle que réellement montée**.
-Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consigné.
+Total en fin de page. Les prix de la colonne `Prix TTC` sont des **prix de ligne**
+(quantité comprise), et non des prix unitaires.
 
 ---
 
@@ -10,8 +11,8 @@ Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consig
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
 | Jetson Orin Nano Super Developer Kit | RS Online | 1 | 311,18 € |
-| **NUCLEO-G431RB** — *MCU du `motion_node`* | ST | 1 | — |
-| **X-NUCLEO-IHM16M1** (STSPIN830) — *étages de puissance* | ST | 2 | — |
+| NUCLEO-G431RB — *MCU du `motion_node`* | Farnell France | 1 | 22,08 € |
+| X-NUCLEO-IHM16M1 (STSPIN830) — *étages de puissance* | Farnell France | 2 | 36,22 € |
 | ESP32-C3 SuperMini — *nœud de coordination, jamais implémenté* | AliExpress | 1 | 4,29 € |
 | Alimentation AC-DC 24 V / 150 W | AliExpress | 1 | 5,29 € |
 | Transceivers CAN WCMCU-230 (lot de 10) — ⚠️ **contrefaits, voir ci-dessous** | AliExpress | 1 | 5,19 € |
@@ -33,9 +34,8 @@ Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consig
 
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
-| iFlight iPower **GM5208-12** + encodeur **AS5048A** (paire) | AliExpress | 1 | 134,99 € |
+| iFlight iPower GM5208-12 + encodeur AS5048A (paire) | AliExpress | 1 | 134,99 € |
 | Actionneur linéaire course 35 mm | AliExpress | 1 | 20,42 € |
-| Actionneur linéaire course 10 mm | AliExpress | 2 | 1,99 € |
 | Capteur photoélectrique en U — *prise d'origine* | AliExpress | 1 | 2,54 € |
 
 ## Optique de tir
@@ -50,6 +50,17 @@ Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consig
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
 | **Lunettes de protection OD7+ CE 190–550 nm** | AliExpress | 1 | 30,29 € |
+
+## Total
+
+| | Prix TTC |
+|---|---:|
+| Calcul et électronique | 393,34 € |
+| Vision | 151,88 € |
+| Mécanique et actionneurs | 157,95 € |
+| Optique de tir | 107,28 € |
+| Sécurité | 30,29 € |
+| **TOTAL** | **840,74 €** |
 
 ---
 
