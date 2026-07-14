@@ -1,7 +1,8 @@
 # Annexe — Nomenclature (BOM)
 
 Nomenclature du prototype **mk.2**, **telle que réellement montée**.
-Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consigné.
+Total en fin de page. Les prix de la colonne `Prix TTC` sont des **prix de ligne**
+(quantité comprise), et non des prix unitaires.
 
 ---
 
@@ -35,7 +36,6 @@ Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consig
 |---|---|---:|---:|
 | iFlight iPower **GM5208-12** + encodeur **AS5048A** (paire) | AliExpress | 1 | 134,99 € |
 | Actionneur linéaire course 35 mm | AliExpress | 1 | 20,42 € |
-| Actionneur linéaire course 10 mm | AliExpress | 2 | 1,99 € |
 | Capteur photoélectrique en U — *prise d'origine* | AliExpress | 1 | 2,54 € |
 
 ## Optique de tir
@@ -50,6 +50,28 @@ Total relevé ≈ **830 € TTC** — le prix des cartes ST n'a pas été consig
 | Élément | Fournisseur | Qté | Prix TTC |
 |---|---|---:|---:|
 | **Lunettes de protection OD7+ CE 190–550 nm** | AliExpress | 1 | 30,29 € |
+
+## Total
+
+| | Prix TTC |
+|---|---:|
+| Calcul et électronique *(hors cartes ST, non chiffrées)* | 335,04 € |
+| Vision | 151,88 € |
+| Mécanique et actionneurs | 157,95 € |
+| Optique de tir | 107,28 € |
+| Sécurité | 30,29 € |
+| **Sous-total — lignes chiffrées** | **782,44 €** |
+| **NUCLEO-G431RB** (×1) + **X-NUCLEO-IHM16M1** (×2) | **à consigner** |
+| **TOTAL** | **782,44 € + cartes ST** |
+
+> ⚠️ **Ce total est incomplet et le restera tant que les trois cartes ST ne seront pas
+> chiffrées.** Elles ont été achetées chez **Farnell France** mais leur prix n'a jamais été
+> consigné, et il n'est pas reconstituable : il faut le relever sur la facture Farnell.
+>
+> L'ancien en-tête annonçait « Total relevé ≈ 830 € TTC ». **Ce chiffre ne se recoupe avec
+> aucune lecture de la table** : la somme des lignes vaut 782,44 € (prix de ligne) ou
+> 938,30 € (si on lisait la colonne comme des prix unitaires). Il a donc été retiré plutôt
+> que propagé.
 
 ---
 
