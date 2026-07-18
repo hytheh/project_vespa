@@ -26,11 +26,26 @@ namespace VESPA
     CameraInterface::CameraInterface(const std::string &devicePath)
         : m_devicePath(devicePath), m_fd(-1)
     {
+        for (int i = 0; i < BUFFER_COUNT; ++i)
+        {
+            m_buffers[i].start = nullptr;
+            m_buffers[i].length = 0;
+        }
     }
 
     CameraInterface::~CameraInterface()
     {
         stopStream();
+        // Unmap every buffer we successfully mmap'd, otherwise the DMA mappings
+        // leak on every rig teardown.
+        for (int i = 0; i < BUFFER_COUNT; ++i)
+        {
+            if (m_buffers[i].start != nullptr && m_buffers[i].start != MAP_FAILED)
+            {
+                munmap(m_buffers[i].start, m_buffers[i].length);
+                m_buffers[i].start = nullptr;
+            }
+        }
         if (m_fd >= 0)
             close(m_fd);
     }
@@ -115,9 +130,20 @@ namespace VESPA
             buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
             buf.memory = V4L2_MEMORY_MMAP;
             buf.index = i;
-            ioctl(m_fd, VIDIOC_QUERYBUF, &buf);
+            if (ioctl(m_fd, VIDIOC_QUERYBUF, &buf) < 0)
+            {
+                std::cerr << "Failed to query buffer " << i << std::endl;
+                return false;
+            }
+
+            void *ptr = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, buf.m.offset);
+            if (ptr == MAP_FAILED)
+            {
+                std::cerr << "Failed to mmap buffer " << i << std::endl;
+                return false; // destructor unmaps whatever mapped before this
+            }
             m_buffers[i].length = buf.length;
-            m_buffers[i].start = mmap(NULL, buf.length, PROT_READ | PROT_WRITE, MAP_SHARED, m_fd, buf.m.offset);
+            m_buffers[i].start = ptr;
         }
         return true;
     }

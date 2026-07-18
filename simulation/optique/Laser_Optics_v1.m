@@ -14,6 +14,9 @@ Target_Range = [550, 1100]; % mm
 Default_Target = 800;   % mm
 
 % Safety/Lethality Constants
+% NOTE (exposure time): this model uses 20 ms; the PFE soutenance report used
+% 40 ms. The delivered spot rounds to ~0.53 mm in both cases, so no safety figure
+% is wrong -- but the two exposure assumptions are not reconciled here.
 T_exposure = 0.020;     % s
 Fluence_Lethal = 50;    % J/cm^2
 I_lethal = Fluence_Lethal / T_exposure; % 2500 W/cm^2
@@ -44,7 +47,12 @@ for i = 1:length(targets)
     theta_focus = atan(w_at_lens / v_dist);
     
     % Error Margin Calc (Geometric Approximation)
-    w_0 = 0.08; % Conservative min spot size (mm)
+    % w_0 is the diffraction-limited waist RADIUS (mm). This is the worst case
+    % (highest peak intensity), so 'Peak Intensity' printed below (~2.7e4 W/cm^2)
+    % is NOT the same figure as securite_laser.md's "~2200 W/cm^2 on a 0.53 mm
+    % spot": that doc uses the realistic delivered spot DIAMETER (0.53 mm =>
+    % 0.265 mm radius). Both are correct for their own spot definition.
+    w_0 = 0.08; % diffraction-limited waist radius (mm), worst case
     if w_lethal > w_0
         z_delta = (w_lethal - w_0) / tan(theta_focus);
         error_margin(i) = 2 * z_delta; 

@@ -4,7 +4,14 @@
 > Il est conservé dans l'arborescence parce que le protocole CAN réserve ses identifiants et
 > que le reste du système est écrit en supposant son existence future.
 
-**Cible matérielle prévue :** ESP32 (ESP32-C3 SuperMini dans la nomenclature).
+**Cible matérielle prévue :** ESP32 **bi-cœur** (ESP32 classique ou ESP32-S3).
+
+> ⚠️ L'ESP32-**C3** SuperMini listé dans la nomenclature d'origine est **mono-cœur**
+> (RISC-V) : il ne peut pas fournir le « cœur CPU dédié » exigé par le watchdog ci-dessous.
+> Deux options pour une reprise : (a) viser un ESP32/ESP32-S3 **bi-cœur** pour réserver un
+> cœur au superviseur ; ou (b) sur mono-cœur, réaliser l'isolation par une **tâche FreeRTOS
+> de priorité maximale épinglée** + le **watchdog matériel (TWDT)** de la puce. L'option (a)
+> est recommandée pour un organe qui conditionne un laser de Classe 4.
 
 ---
 
@@ -22,17 +29,26 @@ Voir [`docs/annexes/securite_laser.md`](../../docs/annexes/securite_laser.md).
 
 ### 1. Watchdog (priorité absolue)
 
-Superviseur centralisé, **sur un cœur CPU dédié**, au plus près de l'organe dangereux.
+Superviseur centralisé, **sur un cœur CPU dédié** (voir la note matérielle ci-dessus), au
+plus près de l'organe dangereux.
 
 - Écoute les *heartbeats* périodiques de tous les nœuds : `HB_VISION` (`0x100`),
   `HB_MOTION` (`0x110`), `HB_COORD` (`0x120`).
 - Chaque *heartbeat* porte un `uint8_t system_state` : `0x00` OK, `0x01` WARNING,
-  `0x02` FAULT.
+  `0x02` FAULT (énumération normative dans `can_protocol.h`).
+- **Timeout par nœud (à figer) :** valeur proposée **200 ms** de silence glissant. Le
+  firmware actuel émet les *heartbeats* à **1 Hz** (`motion_node`) ; pour un interlock à
+  200 ms, il faut **relever la cadence** sur le lien critique (p. ex. ≥ 10 Hz), ce qui est
+  un préalable d'implémentation.
 - **Déclenche la mise en sécurité si** : un nœud signale `FAULT`, **ou** un nœud cesse
-  d'émettre au-delà d'un délai toléré (*timeout*).
-- La mise en sécurité est **matérielle** : coupure de l'**alimentation générale**. Pendant
-  le temps de décharge des condensateurs, l'ordre de tir est en outre inhibé au niveau
-  logiciel.
+  d'émettre au-delà du *timeout* ci-dessus.
+- **Signal d'interlock — ligne physique, pas une trame CAN.** Le superviseur pilote une
+  sortie GPIO dédiée `INTERLOCK_EN`, **fail-safe** (niveau **bas = tir interdit** ; l'organe
+  de tir n'est armé que sur niveau haut maintenu). Elle est **indépendante du bus** pour ne
+  pas dépendre de la panne qu'elle doit traiter (cf. l'avertissement ci-dessous).
+- La mise en sécurité est **matérielle** : coupure de l'**alimentation générale** et passage
+  de `INTERLOCK_EN` au niveau bas. Pendant le temps de décharge des condensateurs, l'ordre
+  de tir est en outre inhibé au niveau logiciel.
 
 > ⚠️ Un superviseur qui dépendrait du bus pour couper le courant serait vulnérable à la
 > panne même qu'il doit traiter. La coupure doit être physique et par défaut fermée

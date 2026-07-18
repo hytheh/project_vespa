@@ -166,4 +166,5 @@ def index(): return render_template_string(HTML_PAGE)
 def video_feed(): return Response(generate_stream(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=False, threaded=True) # Port 5001 so it doesn't collide with Calibration
+    # Localhost only (no auth). Port 5001, distinct from the calibration tools.
+    app.run(host='127.0.0.1', port=5001, debug=False, threaded=True)

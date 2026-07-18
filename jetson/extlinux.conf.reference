@@ -7,7 +7,7 @@ LABEL primary
       MENU LABEL primary kernel
       LINUX /boot/arducam/Image
       INITRD /boot/initrd
-      APPEND ${cbootargs} root=PARTUUID=dce4a021-9538-446f-966a-58c95b437f07 rw rootwait rootfstype=ext4 mminit_loglevel=4 console=ttyTCU0,115200 firmware_class.path=/etc/firmware fbcon=map:0 video=efifb:off console=tty0 nv-auto-config
+      APPEND ${cbootargs} root=PARTUUID=<YOUR-ROOT-PARTUUID> rw rootwait rootfstype=ext4 mminit_loglevel=4 console=ttyTCU0,115200 firmware_class.path=/etc/firmware fbcon=map:0 video=efifb:off console=tty0 nv-auto-config
       FDT /boot/my_new_tegra.dtb 
 
 
@@ -34,5 +34,5 @@ LABEL JetsonIO
 	LINUX /boot/arducam/Image
 	FDT /boot/arducam/dts/dtb/tegra234-p3768-0000+p3767-0005-nv-super.dtb
 	INITRD /boot/initrd
-	APPEND ${cbootargs} root=PARTUUID=dce4a021-9538-446f-966a-58c95b437f07 rw rootwait rootfstype=ext4 mminit_loglevel=4 console=ttyTCU0,115200 firmware_class.path=/etc/firmware fbcon=map:0 video=efifb:off console=tty0 nv-auto-config
+	APPEND ${cbootargs} root=PARTUUID=<YOUR-ROOT-PARTUUID> rw rootwait rootfstype=ext4 mminit_loglevel=4 console=ttyTCU0,115200 firmware_class.path=/etc/firmware fbcon=map:0 video=efifb:off console=tty0 nv-auto-config
 	OVERLAYS /boot/arducam/dts/tegra234-p3767-camera-p3768-arducam-dual.dtbo,/boot/jetson-io-hdr40-user-custom.dtbo,/boot/can0-pinmux.dtbo

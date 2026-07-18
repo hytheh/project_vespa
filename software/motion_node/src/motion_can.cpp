@@ -6,6 +6,32 @@
 
 #include "motion_can.h"
 
+/*
+ * The meaning of FDCAN_TxHeaderTypeDef::DataLength changed between STM32Cube G4
+ * HAL revisions (raw byte count vs. an encoded FDCAN_DLC_BYTES_x value). Writing
+ * the raw byte count directly is therefore not portable: on the "wrong" HAL the
+ * wire DLC becomes 0 and every CAN_Decode_* size-check fails silently. We map
+ * through the HAL's own FDCAN_DLC_BYTES_x macros in BOTH directions, so the code
+ * is correct for whichever convention the linked HAL uses (classic CAN, 0-8 B).
+ */
+static const uint32_t kDlcByBytes[9] = {
+    FDCAN_DLC_BYTES_0, FDCAN_DLC_BYTES_1, FDCAN_DLC_BYTES_2, FDCAN_DLC_BYTES_3,
+    FDCAN_DLC_BYTES_4, FDCAN_DLC_BYTES_5, FDCAN_DLC_BYTES_6, FDCAN_DLC_BYTES_7,
+    FDCAN_DLC_BYTES_8
+};
+
+static uint32_t bytesToDlc(uint8_t bytes) {
+    if (bytes > 8) bytes = 8;
+    return kDlcByBytes[bytes];
+}
+
+static uint8_t dlcToBytes(uint32_t dataLength) {
+    for (uint8_t n = 0; n <= 8; ++n) {
+        if (kDlcByBytes[n] == dataLength) return n;
+    }
+    return 0;
+}
+
 MotionCan::MotionCan(uint32_t rxPin, uint32_t txPin) : _rxPin(rxPin), _txPin(txPin) {
     _hfdcan.Instance = FDCAN1;
 }
@@ -85,7 +111,7 @@ bool MotionCan::sendFrame(const CAN_Frame_t* frame) {
     txHeader.Identifier = frame->id;
     txHeader.IdType = FDCAN_STANDARD_ID;
     txHeader.TxFrameType = FDCAN_DATA_FRAME;
-    txHeader.DataLength = frame->dlc; // Removed bitshift for modern HAL
+    txHeader.DataLength = bytesToDlc(frame->dlc); // HAL-version-safe DLC encoding
     txHeader.ErrorStateIndicator = FDCAN_ESI_ACTIVE;
     txHeader.BitRateSwitch = FDCAN_BRS_OFF;
     txHeader.FDFormat = FDCAN_CLASSIC_CAN;
@@ -117,7 +143,7 @@ bool MotionCan::readFrame(CAN_Frame_t* frame) {
     }
 
     frame->id = rxHeader.Identifier;
-    frame->dlc = rxHeader.DataLength; // Removed bitshift for modern HAL
+    frame->dlc = dlcToBytes(rxHeader.DataLength); // HAL-version-safe DLC decoding
     memcpy(frame->data, aligned_data, frame->dlc);
 
     return true;

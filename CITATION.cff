@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite it as below."
+title: "Projet V.E.S.P.A. — Vision-Enabled Sentry for the Protection of Apiaries (prototype mk.2)"
+abstract: >-
+  Autonomous optronic turret for predictive stereo-vision tracking of the Asian
+  hornet (Vespa velutina nigrithorax) near a beehive. Capstone project (PFE),
+  ENSIL-ENSCI, University of Limoges, 2026. Archived semi-functional prototype,
+  open for continuation.
+type: software
+authors:
+  - family-names: Delmas
+    given-names: Antonin
+  - family-names: Desmedt
+    given-names: Clément
+  - family-names: Gilson
+    given-names: Clément
+license: MIT
+year: 2026
+keywords:
+  - stereo vision
+  - Vespa velutina
+  - FOC
+  - CAN bus
+  - Jetson
+  - laser

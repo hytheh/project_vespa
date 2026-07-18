@@ -7,6 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # --- Dependencies ---
 find_package(OpenCV REQUIRED)
 
+# Check for i2c-dev (les cibles HAL lient i2c : test_camera_hal, test_hardware_sync, sparse_tracker)
+find_path(I2C_INCLUDE_DIR i2c/smbus.h)
+if(NOT I2C_INCLUDE_DIR)
+    message(FATAL_ERROR "i2c/smbus.h not found. Run: sudo apt install libi2c-dev")
+endif()
+
 # Le chemin de code actuel (ArUco + OpenCV + V4L2) n'utilise ni CUDA, ni VPI, ni DeepStream :
 # ce sont des vestiges de la voie d'inference TensorRT abandonnee (cf. README, « Reconnaissance
 # biologique »). Les exiger ici obligeait a installer toute la pile pour rien.
@@ -14,10 +20,6 @@ find_package(OpenCV REQUIRED)
 #
 #   find_package(CUDA REQUIRED)
 #   find_package(VPI 3.0 REQUIRED)
-#   find_path(I2C_INCLUDE_DIR i2c/smbus.h)
-#   if(NOT I2C_INCLUDE_DIR)
-#       message(FATAL_ERROR "i2c/smbus.h not found. Run: sudo apt install libi2c-dev")
-#   endif()
 #   set(DS_PATH "/opt/nvidia/deepstream/deepstream-7.1/sources/includes")
 
 # --- Link Directories ---
@@ -87,6 +89,20 @@ add_executable(stereo_tracker
 target_include_directories(stereo_tracker PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_definitions(stereo_tracker PRIVATE DEBUG_MODE)
 target_link_libraries(stereo_tracker ${OpenCV_LIBS} zmq)
+
+# --- Executable: sparse_tracker (proper stereoRectify + triangulatePoints) ---
+add_executable(sparse_tracker
+    src/sparse_tracker.cpp
+    src/HardwareSyncController.cpp
+    src/CameraInterface.cpp
+)
+target_include_directories(sparse_tracker BEFORE PRIVATE
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/include
+    /usr/src/jetson_multimedia_api/include
+    ${OpenCV_INCLUDE_DIRS}
+)
+target_link_libraries(sparse_tracker pthread i2c nvbufsurface ${OpenCV_LIBS})
 
 # ==============================================================================
 # FINAL PRODUCTION NODE: vision_node
