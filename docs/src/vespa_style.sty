@@ -43,6 +43,10 @@
 \usepackage{xcolor}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
+% Vide les flottants en attente avant chaque \section : aucune figure ne
+% peut être composée hors de sa section. Chargé après titlesec pour
+% envelopper la version redéfinie de \section.
+\usepackage[section]{placeins}
 \usepackage{listings}
 \usepackage[most]{tcolorbox}
 \usepackage{eurosym}
