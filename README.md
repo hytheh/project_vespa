@@ -96,7 +96,7 @@ Trois nœuds sur un bus **CAN 2.0B à 500 kbit/s**, plus un système auxiliaire 
 
 | Verrou | Nature | Détail |
 |---|---|---|
-| 🟠 **Bus CAN — persistance** | À remettre en service | Le bus **a fonctionné** sur cuivre. Puis une mise à jour a **effacé `can0-pinmux.dtbo` de `/boot`** sans toucher à la ligne `OVERLAYS` qui le référence : le *bootloader* ne trouve rien, **n'émet aucune erreur**, et démarre sans l'*overlay*. `can0` existe toujours, mais ses broches sont `(MUX UNCLAIMED)` et le nœud émet dans le vide. **C'est une remise en état, pas une recherche** — le binaire est dans [`jetson/dts/`](jetson/dts/). Reste aussi à reconfirmer le sens émission après réparation des transceivers. |
+| 🟠 **Bus CAN — persistance** | À remettre en service | Le bus **a fonctionné** sur cuivre. `can0-pinmux.dtbo` est dans `/boot`, copie de référence dans [`jetson/dts/`](jetson/dts/). Piège : une mise à jour JetPack peut **effacer l'*overlay* de `/boot`** sans toucher à la ligne `OVERLAYS` qui le référence — le *bootloader* **n'émet aucune erreur**, `can0` existe toujours, mais ses broches restent `(MUX UNCLAIMED)` et le nœud émet dans le vide. **C'est une remise en état, pas une recherche** : remonter les transceivers avec le correctif 5 V, puis reconfirmer le sens émission. |
 | 🔴 **Reconnaissance biologique** | Reporté | Le modèle **VespAI** est entraîné en RGB ; les capteurs sont monochromes. Le portage en Y8 (1 canal) produit un modèle rapide (10,3 ms, 100 fps) mais **inexploitable** : faux positifs massifs, incapacité à distinguer *V. velutina* de *V. crabro*. Remplacé par un **marqueur ArUco** servant de cible de substitution. |
 | 🔴 **Tir laser** | Reporté (sécurité) | Aucun tir n'a été effectué. Le *watchdog* qui conditionne l'autorisation de tir n'existe pas. |
 | 🔴 **Nœud de coordination** | Non commencé | Collimation dynamique, séquence de tir, watchdog : spécifiés, jamais codés. |
@@ -116,7 +116,7 @@ Le détail complet — symptômes, causes racines, correctifs — est dans
 
    | # | Chantier | Pourquoi d'abord |
    |---|---|---|
-   | 1 | **Remettre le CAN physique en service** | Réinstaller `can0-pinmux.dtbo` dans `/boot`, remonter les transceivers avec le correctif 5 V. Le bus a déjà fonctionné : c'est du remontage, pas du débogage. |
+   | 1 | **Remettre le CAN physique en service** | Remonter les transceivers avec le correctif 5 V. Le bus a déjà fonctionné : c'est du remontage, pas du débogage. |
    | 2 | **Implémenter le watchdog** (ESP32) | Condition *sine qua non* de toute mise sous tension du laser Classe 4. |
    | 3 | **Constituer un jeu de données monochrome** et réentraîner un détecteur | Rend au système sa fonction biologique ; remplace le marqueur ArUco. |
    | 4 | **Collimation dynamique + essais optiques** | Loi de commande établie, mécanisme spécifié, jamais assemblé ni étalonné. |
