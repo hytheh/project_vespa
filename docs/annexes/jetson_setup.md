@@ -28,17 +28,22 @@
 
 ## 2. Overlays d'arbre de périphériques
 
-Trois *overlays* sont chargés au démarrage. Les fichiers de référence sont dans `jetson/`.
+Trois *overlays* sont chargés au démarrage. Les trois binaires sont dans
+[`jetson/dts/`](../../jetson/dts/), avec les sources `.dts` des deux *overlays* propres au
+projet.
 
 | Overlay | Rôle | État |
 |---|---|---|
 | `tegra234-p3767-camera-p3768-arducam-dual.dtbo` | Double caméra OV9281 (un bus I²C par port CSI) | ✅ Fonctionne |
 | `jetson-io-hdr40-user-custom.dtbo` | **PWM de synchronisation** — broches 32 et 33 | ✅ Fonctionne — **ne pas modifier** |
-| `can0-pinmux.dtbo` | Routage du CAN0 (« CAN0 Hardware Override V5 »), broches 29/31 | ✅ Fonctionne — **mais absent de `/boot` en l'état** |
+| `can0-pinmux.dtbo` | Routage du CAN0 (« CAN0 Hardware Override V5 »), broches 29/31 | ✅ Fonctionne |
 
 ### Contenu réel de `jetson-io-hdr40-user-custom.dtbo`
 
-Vérifié par inspection du binaire (juillet 2026). Il ne configure **que** deux broches :
+Source :
+[`jetson/dts/jetson-io-hdr40-user-custom.dts`](../../jetson/dts/jetson-io-hdr40-user-custom.dts),
+décompilée du binaire par `dtc -I dtb -O dts` (Jetson-IO ne produit pas de `.dts`).
+L'*overlay* ne configure **que** deux broches :
 
 ```
 hdr40-pin32  ->  soc_gpio19_pg6
@@ -77,9 +82,11 @@ v4l2-ctl --list-devices
 # PWM de synchronisation
 ls /sys/class/pwm/pwmchip3/
 
-# CAN physique — ÉCHOUE à ce jour
+# CAN physique : overlay présent et broches routées
+find /boot -name "*can*.dtbo"
+#   -> /boot/can0-pinmux.dtbo ; sinon recopier depuis jetson/dts/
 sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
-#   -> aucune sortie : les broches PAA ne sont pas réclamées
+#   -> pin 0 (CAN0_DOUT_PAA0): c310000.mttcan
 ```
 
 ## 5. Synchronisation stéréo (PWM)
@@ -133,15 +140,8 @@ le câblage, la terminaison et le *bit timing* étaient donc corrects.
 | `CTX` | broche **31** (CAN0_TX) | direct — le 3,3 V du Jetson suffit |
 | `CRX` | broche **29** (CAN0_RX) | **pont diviseur 1 kΩ / 2 kΩ si clone 5 V** |
 
-**Ce qui reste à faire.** L'*overlay* a disparu de `/boot` après une mise à jour, et le
-routage est perdu :
-
-```bash
-find /boot -name "*can*.dtbo"     # vide  -> recopier depuis jetson/dts/
-sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
-#   ATTENDU : pin 0 (CAN0_DOUT_PAA0): c310000.mttcan
-#   ECHEC   : pin 0 (CAN0_DOUT_PAA0): (MUX UNCLAIMED)
-```
+**Ce qui reste à faire.** Remonter les transceivers selon le câblage ci-dessus, puis
+valider l'émission Jetson → STM32 (seule la réception l'a été).
 
 > ⚠️ **Une mise à jour de JetPack peut supprimer le `.dtbo` sans toucher à la ligne
 > `OVERLAYS` qui le référence.** Le *bootloader* n'émet alors **aucune erreur** : `can0`

@@ -1,0 +1,37 @@
+/dts-v1/;
+
+/ {
+	overlay-name = "CAN0 Hardware Override V5";
+	compatible = "nvidia,tegra234";
+
+	fragment@0 {
+		target-path = "/bus@0/pinmux@c300000/exp-header-pinmux";
+
+		__overlay__ {
+
+			can0_dout_paa2 {
+				nvidia,function = "rsvd1";
+			};
+
+			can0_din_paa3 {
+				nvidia,function = "rsvd1";
+			};
+
+			can0_dout_paa0_real {
+				nvidia,pins = "can0_dout_paa0";
+				nvidia,function = "can0";
+				nvidia,pull = <0x08>;
+				nvidia,tristate = <0x00>;
+				nvidia,enable-input = <0x00>;
+			};
+
+			can0_din_paa1_real {
+				nvidia,pins = "can0_din_paa1";
+				nvidia,function = "can0";
+				nvidia,pull = <0x08>;
+				nvidia,tristate = <0x01>;
+				nvidia,enable-input = <0x01>;
+			};
+		};
+	};
+};
