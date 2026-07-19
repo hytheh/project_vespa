@@ -107,6 +107,11 @@ Bus SPI commun aux deux encodeurs ; seule la ligne CS les distingue.
 | CAN High | — | CANH → bus |
 | CAN Low | — | CANL → bus |
 
+> ⚠️ **L'alimentation 3,3 V du tableau vaut pour un véritable SN65HVD230.** Les modules
+> du lot du projet sont des **contrefaçons 5 V** (voir [`bom.md`](bom.md)) : leur remontage
+> passe par le correctif 5 V décrit dans *Difficultés techniques*. Vérifier ce que vous avez
+> en main avant de câbler.
+
 > ⚠️ **Attention au piège du constructeur `MotionCan`.** Sa signature déclare des valeurs
 > par défaut `MotionCan(rxPin = PA11, txPin = PA12)` — qui sont **fausses** pour ce
 > câblage (`PA11` est le EN/FAULT du moteur 1 !). Le firmware passe toujours les broches

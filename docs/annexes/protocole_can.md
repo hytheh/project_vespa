@@ -68,7 +68,9 @@ int16_t tx = (int16_t)(rad * 10000.0f);   float rad = rx / 10000.0f;
 | `0x02` | `FAULT` — défaut ; le watchdog doit couper l'alimentation |
 
 **Cadences.** `POS_MOTION` : 20 Hz (50 ms). `HB_*` : 1 Hz. `TARGET_VEC` : cadence caméra
-(60 Hz nominal). Ces valeurs sont fixées dans `software/motion_node/src/main.cpp`.
+(60 Hz nominal). Les cadences du `motion_node` (`POS_MOTION`, `HB_MOTION`) sont fixées dans
+`software/motion_node/src/main.cpp` ; `TARGET_VEC` et `HB_VISION` sont émises par le
+`vision_node` (`software/vision_node/src/main.cpp`).
 
 ## 4. Structures (extrait de `can_protocol.h`)
 
@@ -93,7 +95,7 @@ typedef struct {
 | `motion_node` | `software/motion_node/src/motion_can.cpp` | FDCAN1 en mode CAN 2.0 classique |
 | commun | `software/common/can_utils.c` | Encodage/décodage, partagé par les deux |
 
-Le nœud de coordination (`coordination_node`, ESP32-S2) **n'est pas implémenté** : ses
+Le nœud de coordination (`coordination_node`, ESP32) **n'est pas implémenté** : ses
 trames (`FIRE_CMD` en réception, `POS_COORD`, `HB_COORD`) sont spécifiées ci-dessus mais
 aucun code ne les émet ni ne les consomme.
 
