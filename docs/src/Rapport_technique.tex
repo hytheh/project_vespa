@@ -21,8 +21,8 @@ approvisionnement, câblage, installation système, compilation des deux firmwar
 calibration, mise en route.
 
 Il ne justifie pas les choix de conception — cela relève du rapport de soutenance
-(\fichier{docs/Rapport\_PFE\_2026\_VESPA.pdf}). Il ne raconte pas non plus les impasses —
-cela relève de \fichier{docs/Difficultes\_techniques.pdf}.
+(\fichier{docs/\allowbreak Rapport\_PFE\_2026\_VESPA.pdf}). Il ne raconte pas non plus les impasses —
+cela relève de \fichier{docs/\allowbreak Difficultes\_techniques.pdf}.
 
 \begin{avertissement}[Lisez d'abord « Difficultés techniques »]
 Plusieurs étapes de ce guide comportent des pièges qui \textbf{ne se voient pas} et dont le
@@ -154,8 +154,8 @@ Le câblage complet, broche à broche, est en annexe :
 \textbf{deux points sont critiques} et doivent être connus avant de souder :
 
 \begin{avertissement}[Les deux pièges du câblage]
-\textbf{1. Le potentiomètre \textsc{pan} n'est PAS sur \broche{PA2}, mais sur
-\broche{PB14}.}\\
+\textbf{1. Le potentiomètre \textsc{pan} se câble sur \broche{PB14} — jamais sur
+\broche{PA2}, contrairement au brochage nominal du shield.}\\
 Sur la NUCLEO-G431RB, \broche{PA2} est câblée sur \texttt{USART2\_TX} — la console série du
 ST-LINK. C'est aussi la broche « \textsc{speed} » par défaut du shield IHM16M1 : suivre le
 brochage nominal du shield y met donc le potentiomètre, ce qui \textbf{coupe la console} sans
@@ -214,11 +214,11 @@ La configuration matérielle est portée par trois \emph{overlays} chargés au d
 fichiers de référence sont conservés dans \fichier{jetson/} :
 
 \begin{center}
-\begin{tabularx}{\textwidth}{@{}lX@{}}
+\begin{tabularx}{\textwidth}{@{}p{6.2cm}X@{}}
 \toprule
 \textbf{Overlay} & \textbf{Rôle} \\
 \midrule
-\fichier{...-arducam-dual.dtbo} &
+\fichier{tegra234-p3767-camera-\newline p3768-arducam-dual.dtbo} &
 Double caméra OV9281. C'est lui qui résout le conflit apparent d'adresse
 I\textsuperscript{2}C (un bus par port CSI). \\
 \addlinespace

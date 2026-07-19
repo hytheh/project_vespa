@@ -48,7 +48,14 @@
 % envelopper la version redéfinie de \section.
 \usepackage[section]{placeins}
 \usepackage{listings}
+\usepackage{varwidth}
 \usepackage[most]{tcolorbox}
+% Titre flottant des encadrés : largeur plafonnée à celle du cadre moins les
+% décalages, avec passage à la ligne — un titre long ne déborde jamais.
+\tcbset{vespatitre/.style={
+  varwidth boxed title*=-12mm,
+  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+}}
 \usepackage{eurosym}
 \usepackage[hidelinks]{hyperref}
 
@@ -114,7 +121,7 @@
   boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
   fonttitle=\bfseries\color{white},
   title={LEVÉ — #1},
-  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  vespatitre,
   boxed title style={colback=vespagreen, boxrule=0pt, arc=1mm}
 }
 
@@ -125,7 +132,7 @@
   boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
   fonttitle=\bfseries\color{white},
   title={REPORTÉ — #1},
-  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  vespatitre,
   boxed title style={colback=vespared, boxrule=0pt, arc=1mm}
 }
 
@@ -136,7 +143,7 @@
   boxrule=1pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
   fonttitle=\bfseries\color{white},
   title={#1},
-  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  vespatitre,
   boxed title style={colback=vespared, boxrule=0pt, arc=1mm}
 }
 
@@ -147,7 +154,7 @@
   boxrule=0.5pt, left=3mm, right=3mm, top=2mm, bottom=2mm,
   fonttitle=\bfseries\color{white},
   title={#1},
-  attach boxed title to top left={xshift=6mm, yshift=-2.5mm},
+  vespatitre,
   boxed title style={colback=vespaaccent, boxrule=0pt, arc=1mm}
 }
 
