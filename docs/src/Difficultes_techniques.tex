@@ -169,9 +169,9 @@ entre les deux.
 ST-LINK. Y injecter une tension analogique revient à court-circuiter la sortie série.
 
 \textbf{Correctif.} Potentiomètre \textsc{pan} déplacé sur \broche{PB14}
-(\fichier{pinout.h}). Le fichier historique \fichier{STM32\_WiringManifest.txt} indique
-encore \broche{PA2} : \textbf{il est faux sur ce point}, et
-\fichier{docs/annexes/cablage.md} le corrige.
+(\fichier{pinout.h}). Le câblage de référence est \fichier{docs/annexes/cablage.md} ;
+le manifeste de câblage d'origine, qui indiquait encore \broche{PA2}, a été retiré du
+dépôt à la clôture du projet.
 \end{verroulevé}
 
 % ---------------------------------------------------------------------
@@ -669,7 +669,7 @@ Faux. Chaque port CSI a son propre bus. Un \emph{overlay} adapté suffit. \\
 « \fichier{jetson-io.py} : sélectionnez \texttt{can0}, cela routera les broches » &
 Faux, et destructeur : l'outil écrase la configuration caméra/PWM. \\
 \addlinespace
-« L'\emph{overlay} \fichier{jetson-io-hdr40-user-custom.dtbo} est empoisonné : il assigne
+« L'\emph{overlay} \fichier{jetson-io-hdr40-\allowbreak user-custom.dtbo} est empoisonné : il assigne
 CAN0 à \broche{PAA2}/\broche{PAA3} » &
 \textbf{Faux.} Inspection du binaire : il ne contient \emph{que} les deux broches PWM
 (32 et 33). Aucune configuration CAN. \textbf{Le projet s'est arrêté sur cette fausse
