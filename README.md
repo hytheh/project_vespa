@@ -131,7 +131,7 @@ project_vespa/
 ├── docs/                    Rapports (PDF + sources LaTeX), annexes, bibliographie, références
 │   ├── src/                 Sources LaTeX + vespa.bib + figures (figs/)
 │   ├── annexes/             Câblage, protocole CAN, BOM, setup Jetson, sécurité, dette technique
-│   └── references/          Articles, datasheets, études préparatoires, rapport mk.1 (PDF)
+│   └── references/          Articles, datasheets, études préparatoires (IA)
 ├── hardware/
 │   └── mechanical/          CAO : assemblages STEP, maillages imprimés, plateaux PrusaSlicer, moteur — voir son README
 │                            (les modèles éditables restent sur le 3DEXPERIENCE de l'école)

@@ -124,8 +124,9 @@ Source : [`hardware/mechanical/motor/GM5208-12.json`](../../hardware/mechanical/
 ## Nomenclature du prototype mk.1 (pour mémoire)
 
 Le premier prototype (Cosson & Grimal, 2024/2025) utilisait un matériel radicalement
-différent, dont les limites ont motivé le mk.2 —
-[rapport archivé](../references/rapports/Cosson_Grimal_2025_VESPA_mk1_Pointage.pdf) :
+différent, dont les limites ont motivé le mk.2. Son rapport, remis avec la mention
+« Confidentiel », est cité pour référence dans la bibliographie mais **n'est pas rediffusé
+dans ce dépôt** :
 
 - Arduino Uno (ATmega328P — **pas de FPU**, d'où le *jitter* sur les rampes d'accélération)
 - Moteurs pas-à-pas + shield **DRV8825** (microstepping 1/32) — **décrochage**,

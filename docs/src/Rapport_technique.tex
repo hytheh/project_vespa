@@ -306,16 +306,17 @@ Le service \fichier{jetson/systemd/can0-setup.service} configure le bus \emph{ph
 \paragraph{Dépendances.}
 \begin{lstlisting}[language=bash]
 sudo apt install libopencv-dev libi2c-dev libzmq3-dev cppzmq-dev \
-                 v4l-utils can-utils cmake build-essential
+                 nlohmann-json3-dev v4l-utils can-utils cmake build-essential
 \end{lstlisting}
 
-\begin{note}[Dépendances exigées mais non utilisées]
-Le \fichier{CMakeLists.txt} déclare \texttt{find\_package(CUDA REQUIRED)} et
-\texttt{find\_package(VPI 3.0 REQUIRED)}, ainsi qu'un test sur \fichier{i2c/smbus.h}.
-\textbf{Le chemin de code actuel (ArUco + OpenCV) n'en a pas besoin} : ces dépendances sont
-un vestige de la voie TensorRT abandonnée. Elles restent \emph{obligatoires} pour que
-CMake aboutisse. Si la reprise ne vise pas l'inférence, ces trois exigences peuvent être
-retirées sans dommage.
+\begin{note}[CUDA et VPI ne sont plus des prérequis]
+Le chemin de code actuel (ArUco + OpenCV) ne dépend \textbf{ni de CUDA, ni de VPI, ni de
+TensorRT}. Les \texttt{find\_package(CUDA)} et \texttt{find\_package(VPI 3.0)}, vestiges de
+la voie d'inférence abandonnée, ont été \textbf{retirés} du \fichier{CMakeLists.txt} ; ils y
+restent en commentaire, à réactiver tels quels si une reprise réintroduit l'inférence sur
+GPU. Le test sur \fichier{i2c/smbus.h} est en revanche \textbf{conservé} : les cibles HAL
+(\texttt{test\_camera\_hal}, \texttt{test\_hardware\_sync}, \texttt{sparse\_tracker})
+lient \texttt{i2c}.
 \end{note}
 
 \paragraph{Construction.}
@@ -337,6 +338,9 @@ cmake .. && make -j6
 \texttt{test\_camera\_hal} & Test unitaire d'acquisition. \\
 \texttt{test\_hardware\_sync} & \textbf{Test de la synchronisation stéréo} — à lancer en premier. \\
 \texttt{test\_stereo\_pipeline} & Test de la triangulation hors ligne. \\
+\texttt{sparse\_tracker} & Triangulation par la géométrie stéréo complète (K/D/R/T,
+\texttt{cv::triangulatePoints}) — chemin de validation de la voie éparse (voir l'annexe
+dette technique). \\
 \bottomrule
 \end{tabularx}
 \end{center}
@@ -376,7 +380,10 @@ Toujours passer les broches explicitement :
 \section{Calibration}
 
 Trois outils web (Flask) tournent sur le Jetson et s'utilisent depuis un navigateur
-distant — la machine étant sans écran.
+distant — la machine étant sans écran. Ils n'écoutent que sur \texttt{localhost}
+(127.0.0.1) : depuis un poste distant, y accéder par un tunnel SSH
+(\texttt{ssh -L 5000:localhost:5000 <jetson>}, en adaptant le port — exposition : 5000,
+\emph{viewport} : 5001, calibration stéréo : 5002).
 
 \begin{avertissement}[Un seul programme à la fois sur le matériel]
 Le n\oe ud de vision et les outils Python se disputent le bus I\textsuperscript{2}C. Un
@@ -389,12 +396,14 @@ le second démarrage. \textbf{Ce n'est pas un bug} : arrêter l'un avant de lanc
 \begin{enumerate}
   \item \textbf{Exposition et gain} — \fichier{software/tools/calib\_exposition/}
         \begin{lstlisting}[language=bash]
-cd software/tools/calib_exposition && ./run_exposure.sh   # http://<jetson>:5000
+cd software/tools/calib_exposition
+./run_exposure.sh                    # http://localhost:5000
         \end{lstlisting}
         Régler l'exposition et le gain jusqu'à obtenir un marqueur net et contrasté.
         Les profils sont enregistrés dans
-        \fichier{software/vision\_node/config/profiles/} (P1, P2~«~sombre~», P3~«~lumineux~»),
-        le profil actif étant désigné par \fichier{config/.active\_profile}.
+        \fichier{software/vision\_node/config/profiles/} (\fichier{P1}, \fichier{P2\_dark},
+        \fichier{P3\_bright}), le profil actif étant désigné par
+        \fichier{config/.active\_profile}.
 
         \begin{note}[Limite connue]
         Le capteur n'applique pas le même calcul de temps-ligne en mode maître et en mode
@@ -405,7 +414,8 @@ cd software/tools/calib_exposition && ./run_exposure.sh   # http://<jetson>:5000
 
   \item \textbf{Calibration stéréo} — \fichier{software/tools/calib\_stereo/}
         \begin{lstlisting}[language=bash]
-cd software/tools/calib_stereo && ./run_calibration.sh    # http://<jetson>:5000
+cd software/tools/calib_stereo
+./run_calibration.sh                 # http://localhost:5002
         \end{lstlisting}
         Méthode de Zhang \cite{zhang2000calibration} sur mire d'échiquier.
         \textbf{Couvrir tout le champ} — coins, bords, près et loin, et pas seulement le
@@ -415,7 +425,8 @@ cd software/tools/calib_stereo && ./run_calibration.sh    # http://<jetson>:5000
 
   \item \textbf{Vérification} — \fichier{software/tools/viewport\_live/}
         \begin{lstlisting}[language=bash]
-cd software/tools/viewport_live && ./run_liveviewport.sh
+cd software/tools/viewport_live
+./run_liveviewport.sh                # http://localhost:5001
         \end{lstlisting}
         Affiche le flux avec superposition : position courante du marqueur et
         \textbf{visée prédictive} (réticule cyan) issue du filtre de Kalman.
@@ -577,14 +588,15 @@ capteur monochrome, et d'où l'incompatibilité avec VespAI}
 project_vespa/
 |- docs/                  Rapports (PDF + sources LaTeX), annexes, references
 |  |- src/                Sources LaTeX + vespa.bib + figures (figs/)
-|  |- annexes/            Cablage, protocole CAN, BOM, setup Jetson, securite
-|  \- references/         Articles, datasheets, etudes prep., rapport mk.1
+|  |- annexes/            Cablage, protocole CAN, BOM, setup Jetson,
+|  |                      securite, dette technique
+|  \- references/         Articles, datasheets, etudes preparatoires (IA)
 |- hardware/
 |  \- mechanical/         CAO (STEP), maillages imprimes, plateaux, moteur
 |- jetson/                Config systeme (overlays, services CAN, extlinux)
 |- simulation/            Scripts MATLAB de dimensionnement (vision + optique)
 \- software/
-   |- common/             Protocole CAN partage (C, portable STM32/ESP32)
+   |- common/             Protocole CAN partage (C - STM32/ESP32/Linux)
    |- vision_node/        Jetson - C++17 / OpenCV / V4L2 / SocketCAN (CMake)
    |- motion_node/        STM32G431RB - SimpleFOC / FDCAN (PlatformIO)
    |- coordination_node/  ESP32 - NON IMPLEMENTE (specification seule)
@@ -621,8 +633,9 @@ Bus CAN physique & Jetson $\leftarrow$ STM32 : \textbf{111\,909 trames, 0 erreur
 \midrule
 \textbf{Bus CAN — sens émission} & \textcolor{vespaaccent}{\textbf{Non reconfirmé}} après
 correction des transceivers contrefaits & — \\
-\textbf{Bus CAN — persistance} & \textcolor{vespared}{\textbf{\emph{Overlay} absent de
-\fichier{/boot}}} — à réinstaller & — \\
+\textbf{Bus CAN — persistance} & \textcolor{vespaaccent}{\textbf{Fragile}} —
+l'\emph{overlay} est dans \fichier{/boot} (copie : \fichier{jetson/dts/}), mais une mise à
+jour JetPack peut l'effacer sans erreur ; à revérifier après chaque mise à jour & — \\
 \textbf{Détection du frelon} & \textcolor{vespared}{\textbf{Absente}} — remplacée par ArUco
 & — \\
 \textbf{Watchdog} & \textcolor{vespared}{\textbf{Non implémenté}} & — \\

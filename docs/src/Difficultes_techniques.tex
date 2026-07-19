@@ -123,7 +123,7 @@ d'usine} — un emplacement 0402 laissé vide fait office de circuit ouvert.
 \medskip
 \noindent
 Autrement dit : le chemin officiel pour obtenir un déclenchement stéréo matériel est
-d'\textbf{acheter la carte du constructeur}. Le \emph{motion node} de VESPA ne l'a pas fait.
+d'\textbf{acheter la carte du constructeur}. Le \emph{vision node} de VESPA ne l'a pas fait.
 Il obtient le même résultat sur \textbf{deux cartes UC-788 standard}, en prenant l'horloge
 maîtresse là où personne ne la cherche : le \textbf{générateur PWM matériel du Tegra
 lui-même}, câblé sur l'en-tête 40 broches. Aucun accessoire, aucun microcontrôleur
@@ -276,7 +276,7 @@ $ ip -details -statistics link show can0
 \textbf{Lecture du relevé.} La réception est \emph{parfaite} : \textbf{111\,909 trames, zéro
 erreur}. L'émission, elle, est morte : le compteur \texttt{TX} est figé sur la valeur
 atteinte lors du dernier test en bouclage interne, le contrôleur part en \texttt{BUS-OFF} et
-se relance 20\,363 fois. Le Jetson \emph{entend} parfaitement le STM32 ; il n'arrive pas à
+se relance 20\,362 fois. Le Jetson \emph{entend} parfaitement le STM32 ; il n'arrive pas à
 lui \emph{répondre}.
 
 \textbf{Cause racine.} Les modules \fichier{WCMCU-230}, vendus comme portant un
@@ -374,14 +374,15 @@ Assigner la fonction \texttt{can0} aux broches \broche{PAA2}/\broche{PAA3} revie
 au silicium de router \emph{CAN0 sur les broches physiques de CAN1}. C'est l'erreur classique
 sur cette carte, et elle ne produit aucun message d'erreur : simplement, plus rien ne sort.
 
-\paragraph{L'\emph{overlay} à réinstaller.} Le bon binaire est conservé dans le dépôt :
-\fichier{jetson/dts/can0-pinmux.dtbo}, dont l'en-tête interne annonce
-« \texttt{CAN0 Hardware Override V5} » — cinquième itération. Il déclare les n\oe uds corrects
-(\texttt{can0\_dout\_paa0}, \texttt{can0\_din\_paa1}, fonction \texttt{can0}) et neutralise
-\texttt{paa2}/\texttt{paa3}. \textbf{C'est cette version qui a produit les 111\,909 trames.}
-Elle doit être recopiée dans \fichier{/boot} et référencée dans la ligne \texttt{OVERLAYS}
+\paragraph{L'\emph{overlay}, retrouvé et remis en place.} Le bon binaire a depuis été
+récupéré : il est de nouveau dans \fichier{/boot}, référencé par la ligne \texttt{OVERLAYS}
 de \fichier{/boot/extlinux/extlinux.conf} (modèle fourni :
-\fichier{jetson/extlinux.conf.reference}).
+\fichier{jetson/extlinux.conf.reference}), et sa copie de référence est versionnée dans
+\fichier{jetson/dts/can0-pinmux.dtbo}, avec sa source \fichier{.dts}. Son en-tête interne
+annonce « \texttt{CAN0 Hardware Override V5} » — cinquième itération. Il déclare les
+n\oe uds corrects (\texttt{can0\_dout\_paa0}, \texttt{can0\_din\_paa1}, fonction
+\texttt{can0}) et neutralise \texttt{paa2}/\texttt{paa3}. \textbf{C'est cette version qui a
+produit les 111\,909 trames.}
 
 \begin{avertissement}[Une hypothèse répandue — et fausse]
 La dernière piste explorée avant l'arrêt du projet attribuait la panne à un \emph{overlay}
@@ -401,9 +402,10 @@ casserait la synchronisation stéréo. La cause est ailleurs.
 \paragraph{Procédure de reprise.} Il ne s'agit pas d'une recherche, mais d'une remise en
 état. Dans l'ordre :
 \begin{enumerate}
-  \item \textbf{Réinstaller l'\emph{overlay}} : copier \fichier{jetson/dts/can0-pinmux.dtbo}
-        dans \fichier{/boot}, l'ajouter à la ligne \texttt{OVERLAYS} de
-        \fichier{extlinux.conf}, redémarrer.
+  \item \textbf{Vérifier l'\emph{overlay}} : \fichier{can0-pinmux.dtbo} doit être dans
+        \fichier{/boot} et sur la ligne \texttt{OVERLAYS} de \fichier{extlinux.conf} — il y
+        est en l'état. S'il a disparu (mise à jour JetPack), le recopier depuis
+        \fichier{jetson/dts/} et redémarrer.
   \item \textbf{Vérifier que les broches sont réclamées} — c'est le contrôle qui tranche :
 \begin{lstlisting}[language=bash]
 sudo bash -c "cat /sys/kernel/debug/pinctrl/*/pinmux-pins | grep -i paa"
@@ -721,9 +723,10 @@ piste bien argumentée.
 \textbf{\#} & \textbf{Chantier} & \textbf{Pourquoi dans cet ordre} \\
 \midrule
 1 & \textbf{Remettre le CAN physique en service} &
-Le bus a déjà fonctionné (111\,909 trames, 0 erreur). Il ne reste qu'à réinstaller
-\fichier{can0-pinmux.dtbo} dans \fichier{/boot} et à remonter les transceivers avec le
-correctif 5~V. \textbf{C'est une remise en état, pas une recherche.} \\
+Le bus a déjà fonctionné (111\,909 trames, 0 erreur) et l'\emph{overlay}
+\fichier{can0-pinmux.dtbo} est en place dans \fichier{/boot}. Il ne reste qu'à remonter les
+transceivers avec le correctif 5~V et à reconfirmer le sens émission.
+\textbf{C'est une remise en état, pas une recherche.} \\
 \addlinespace
 2 & \textbf{Implémenter le watchdog} &
 Condition \emph{sine qua non} de toute mise sous tension du laser de Classe 4.
